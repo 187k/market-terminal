@@ -18,3 +18,7 @@ Thumbs.db
 # Local database backups and soak reports
 backups/
 soak/
+
+CLAUDE.md
+HANDOFF.md
+prompt.md
