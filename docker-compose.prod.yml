@@ -1,0 +1,96 @@
+# Production overrides, used together with the base file:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml --profile app up -d --build
+#
+# Adds HTTPS (Caddy with automatic Let's Encrypt certificates), periodic PostgreSQL backups,
+# log rotation and secure cookies, and refuses to start without a database password and a
+# domain. Only Caddy listens on the network (80 and 443); PostgreSQL and Redis stay on
+# 127.0.0.1 for administration, and the dashboard container is reachable only through Caddy.
+# See docs/deployment.md.
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: '5'
+
+x-db-url: &db-url postgresql://${POSTGRES_USER:-mip}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-mip}
+
+services:
+  postgres:
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    logging: *logging
+
+  redis:
+    logging: *logging
+
+  migrate:
+    environment:
+      DATABASE_URL: *db-url
+    logging: *logging
+
+  collector:
+    environment:
+      DATABASE_URL: *db-url
+    logging: *logging
+
+  engine:
+    environment:
+      DATABASE_URL: *db-url
+    logging: *logging
+
+  api:
+    environment:
+      DATABASE_URL: *db-url
+      # The dashboard is only served over HTTPS here, so the session cookie is Secure.
+      COOKIE_SECURE: 'true'
+    logging: *logging
+
+  web:
+    # Reached only through Caddy.
+    ports: !reset []
+    logging: *logging
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in .env (the public host name of the dashboard)}
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+    profiles: [app]
+    restart: unless-stopped
+    logging: *logging
+
+  backup:
+    image: postgres:18-alpine
+    entrypoint: ['/bin/sh', '/backup.sh']
+    environment:
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER:-mip}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      PGDATABASE: ${POSTGRES_DB:-mip}
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+      BACKUP_INTERVAL_HOURS: ${BACKUP_INTERVAL_HOURS:-24}
+      BACKUP_INCLUDE_SNAPSHOTS: ${BACKUP_INCLUDE_SNAPSHOTS:-false}
+    volumes:
+      - ./docker/backup.sh:/backup.sh:ro
+      - ${BACKUP_DIR:-./backups}:/backups
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles: [app]
+    restart: unless-stopped
+    logging: *logging
+
+volumes:
+  caddy_data:
+  caddy_config:

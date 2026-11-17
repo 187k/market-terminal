@@ -1,0 +1,51 @@
+{
+  "name": "market-intelligence-platform",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Crypto market intelligence platform: exchange connectors, scanners, Telegram bots and a web dashboard.",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "workspaces": [
+    "packages/core",
+    "packages/bus",
+    "packages/analytics",
+    "packages/connectors",
+    "packages/db",
+    "apps/collector",
+    "apps/engine",
+    "apps/api",
+    "apps/web"
+  ],
+  "scripts": {
+    "postinstall": "npm run generate -w @mip/db",
+    "build": "npm run build -w @mip/core && npm run build -w @mip/bus && npm run build -w @mip/analytics && npm run build -w @mip/connectors && npm run build -w @mip/db && npm run build -w @mip/collector -w @mip/engine -w @mip/api -w @mip/web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:live": "node tools/test-live.mjs",
+    "record": "node tools/record.mjs",
+    "verify": "node --conditions=source --import tsx tools/verify-live.ts",
+    "soak": "node --conditions=source --import tsx tools/soak.ts",
+    "dev": "node tools/dev.mjs",
+    "dev:collector": "npm run dev -w @mip/collector",
+    "dev:engine": "npm run dev -w @mip/engine",
+    "dev:api": "npm run dev -w @mip/api",
+    "dev:web": "npm run dev -w @mip/web",
+    "db:generate": "npm run generate -w @mip/db",
+    "db:migrate": "npm run migrate:dev -w @mip/db",
+    "db:deploy": "npm run migrate:deploy -w @mip/db",
+    "infra:up": "docker compose up -d postgres redis",
+    "infra:down": "docker compose down",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "prettier": "^3.10.1",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
+  }
+}

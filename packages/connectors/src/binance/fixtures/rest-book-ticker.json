@@ -1,0 +1,29 @@
+[
+  {
+    "symbol": "BTCUSDT",
+    "bidPrice": "64785.90",
+    "bidQty": "2.380",
+    "askPrice": "64786.00",
+    "askQty": "4.902",
+    "time": 1794812752203,
+    "lastUpdateId": 12129654062802
+  },
+  {
+    "symbol": "ETHUSDT",
+    "bidPrice": "1818.69",
+    "bidQty": "31.467",
+    "askPrice": "1818.70",
+    "askQty": "173.368",
+    "time": 1794812752554,
+    "lastUpdateId": 12129654086296
+  },
+  {
+    "symbol": "1000PEPEUSDT",
+    "bidPrice": "0.0037654",
+    "bidQty": "715003",
+    "askPrice": "0.0037655",
+    "askQty": "102529",
+    "time": 1794812752537,
+    "lastUpdateId": 12129654085166
+  }
+]

@@ -1,0 +1,131 @@
+// Prisma 7: the connection URL lives in prisma.config.ts, not here.
+generator client {
+  provider               = "prisma-client"
+  output                 = "../src/generated/prisma"
+  runtime                = "nodejs"
+  moduleFormat           = "esm"
+  generatedFileExtension = "ts"
+  importFileExtension    = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// Connection state transitions of exchange WebSocket / REST clients.
+/// Low volume (only changes are written), shown in the dashboard as API / WebSocket problems.
+model ConnectionEvent {
+  id         BigInt   @id @default(autoincrement())
+  at         DateTime @db.Timestamptz(3)
+  exchange   String
+  connection String
+  state      String
+  reason     String?
+
+  @@index([at(sort: Desc)])
+  @@index([exchange, at(sort: Desc)])
+  @@map("connection_events")
+}
+
+/// Each build of the monitored instrument universe. The latest one is reused after a restart
+/// (so CoinGecko is not needed on every start) and is the fallback when CoinGecko is down.
+model UniverseSnapshot {
+  id      BigInt   @id @default(autoincrement())
+  builtAt DateTime @db.Timestamptz(3)
+  /// "coingecko" or "volume"
+  source  String
+  size    Int
+  /// UniverseInfo plus the CoinGecko inputs it was built from (coins, excluded ids).
+  data    Json
+
+  @@index([builtAt(sort: Desc)])
+  @@map("universe_snapshots")
+}
+
+/// Instrument registry: the exchange contracts that represent universe assets.
+/// Rewritten on every universe build.
+model Instrument {
+  exchange     String
+  symbol       String
+  /// Universe asset id (CoinGecko id, or the asset code when ranked by volume).
+  assetId      String
+  asset        String
+  base         String
+  quote        String
+  multiplier   Float
+  contractSize Float
+  tickSize     Float?
+  maxLeverage  Float?
+  indexKind    String
+  launchTime   DateTime? @db.Timestamptz(3)
+  url          String
+  updatedAt    DateTime  @db.Timestamptz(3)
+
+  @@id([exchange, symbol])
+  @@index([assetId])
+  @@map("instruments")
+}
+
+/// One detected market situation per scanner, from first detection until it resolves.
+/// Active rows are reloaded after an engine restart so nothing is announced twice.
+model Signal {
+  id                BigInt    @id @default(autoincrement())
+  scanner           String
+  /// Deduplication key, unique among active signals of a scanner.
+  key               String
+  exchange          String?
+  symbol            String?
+  asset             String
+  direction         String?
+  title             String
+  value             Float
+  peakValue         Float
+  /// "active" | "resolved"
+  status            String
+  firstSeenAt       DateTime  @db.Timestamptz(3)
+  lastSeenAt        DateTime  @db.Timestamptz(3)
+  resolvedAt        DateTime? @db.Timestamptz(3)
+  updates           Int       @default(0)
+  data              Json
+  telegramState     String
+  telegramMessageId Int?
+  telegramDetail    String?
+
+  @@index([scanner, firstSeenAt(sort: Desc)])
+  @@index([status, scanner])
+  @@map("signals")
+}
+
+/// One snapshot per instrument per minute, written by the collector: the history behind the
+/// Open Interest windows (5 m … 4 h), price changes and observed funding settlements.
+/// Only fresh values are stored; a missing or stale value is NULL. Old rows are deleted
+/// (MARKET_SNAPSHOT_RETENTION_DAYS).
+model MarketSnapshot {
+  /// Start of the minute (UTC).
+  ts              DateTime  @db.Timestamptz(3)
+  exchange        String
+  symbol          String
+  mark            Float?
+  last            Float?
+  /// One side, base units.
+  openInterest    Float?
+  fundingRate     Float?
+  fundingInterval Float?
+  nextFundingTime DateTime? @db.Timestamptz(3)
+  turnover24h     Float?
+
+  @@id([exchange, symbol, ts])
+  @@index([ts])
+  @@map("market_snapshots")
+}
+
+/// Settings of each scanner (thresholds, filters, cooldowns), edited from the dashboard.
+/// Values missing here fall back to the defaults in code.
+model ScannerSetting {
+  scanner   String   @id
+  enabled   Boolean
+  settings  Json
+  updatedAt DateTime @db.Timestamptz(3)
+
+  @@map("scanner_settings")
+}

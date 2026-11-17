@@ -1,0 +1,31 @@
+{
+  "code": "00000",
+  "msg": "success",
+  "requestTime": 1794814380024,
+  "data": [
+    {
+      "symbol": "BTCUSDT",
+      "fundingRate": "-0.000023",
+      "fundingRateInterval": "8",
+      "nextUpdate": "1794816000000",
+      "minFundingRate": "-0.003",
+      "maxFundingRate": "0.003"
+    },
+    {
+      "symbol": "ETHUSDT",
+      "fundingRate": "-0.000014",
+      "fundingRateInterval": "8",
+      "nextUpdate": "1794816000000",
+      "minFundingRate": "-0.003",
+      "maxFundingRate": "0.003"
+    },
+    {
+      "symbol": "PEPEUSDT",
+      "fundingRate": "-0.000318",
+      "fundingRateInterval": "8",
+      "nextUpdate": "1794816000000",
+      "minFundingRate": "-0.0099",
+      "maxFundingRate": "0.0099"
+    }
+  ]
+}

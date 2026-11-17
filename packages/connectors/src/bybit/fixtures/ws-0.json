@@ -1,0 +1,270 @@
+{
+  "tickers.BTCUSDT:snapshot": [
+    {
+      "topic": "tickers.BTCUSDT",
+      "type": "snapshot",
+      "data": {
+        "symbol": "BTCUSDT",
+        "tickDirection": "ZeroMinusTick",
+        "price24hPcnt": "0.008032",
+        "lastPrice": "64804.30",
+        "prevPrice24h": "64287.90",
+        "highPrice24h": "66132.70",
+        "lowPrice24h": "63733.80",
+        "prevPrice1h": "64447.70",
+        "markPrice": "64804.30",
+        "indexPrice": "64824.45",
+        "openInterest": "70217.043",
+        "openInterestValue": "4550366319.68",
+        "turnover24h": "4555134090.6901",
+        "volume24h": "70163.9540",
+        "fundingIntervalHour": "8",
+        "fundingCap": "0.00333",
+        "singleOpenInterest": "35108.522",
+        "singleOpenInterestValue": "2275183192.24",
+        "nextFundingTime": "1794816000000",
+        "fundingRate": "-0.00002486",
+        "bid1Price": "64804.30",
+        "bid1Size": "0.968",
+        "ask1Price": "64804.40",
+        "ask1Size": "3.760",
+        "preOpenPrice": "",
+        "preQty": "",
+        "curPreListingPhase": ""
+      },
+      "cs": 847467470050,
+      "ts": 1794812659169
+    }
+  ],
+  "tickers.BTCUSDT:delta": [
+    {
+      "topic": "tickers.BTCUSDT",
+      "type": "delta",
+      "data": {
+        "symbol": "BTCUSDT",
+        "ask1Price": "64804.40",
+        "ask1Size": "3.606"
+      },
+      "cs": 847467470331,
+      "ts": 1794812659269
+    },
+    {
+      "topic": "tickers.BTCUSDT",
+      "type": "delta",
+      "data": {
+        "symbol": "BTCUSDT",
+        "bid1Price": "64804.30",
+        "bid1Size": "0.950",
+        "ask1Price": "64804.40",
+        "ask1Size": "2.602"
+      },
+      "cs": 847467470566,
+      "ts": 1794812659369
+    },
+    {
+      "topic": "tickers.BTCUSDT",
+      "type": "delta",
+      "data": {
+        "symbol": "BTCUSDT",
+        "bid1Price": "64804.30",
+        "bid1Size": "0.970",
+        "ask1Price": "64804.40",
+        "ask1Size": "3.759"
+      },
+      "cs": 847467470792,
+      "ts": 1794812659469
+    },
+    {
+      "topic": "tickers.BTCUSDT",
+      "type": "delta",
+      "data": {
+        "symbol": "BTCUSDT",
+        "ask1Price": "64804.40",
+        "ask1Size": "3.110"
+      },
+      "cs": 847467471140,
+      "ts": 1794812659569
+    }
+  ],
+  "tickers.ETHUSDT:snapshot": [
+    {
+      "topic": "tickers.ETHUSDT",
+      "type": "snapshot",
+      "data": {
+        "symbol": "ETHUSDT",
+        "tickDirection": "ZeroPlusTick",
+        "price24hPcnt": "0.017325",
+        "lastPrice": "1818.54",
+        "prevPrice24h": "1787.57",
+        "highPrice24h": "1844.43",
+        "lowPrice24h": "1772.02",
+        "prevPrice1h": "1812.41",
+        "markPrice": "1818.62",
+        "indexPrice": "1819.37",
+        "openInterest": "758633.55",
+        "openInterestValue": "1379666146.70",
+        "turnover24h": "1821041661.4805",
+        "volume24h": "1002295.1600",
+        "fundingIntervalHour": "8",
+        "fundingCap": "0.00333",
+        "singleOpenInterest": "379316.78",
+        "singleOpenInterestValue": "689833082.44",
+        "nextFundingTime": "1794816000000",
+        "fundingRate": "-0.00002629",
+        "bid1Price": "1818.59",
+        "bid1Size": "36.65",
+        "ask1Price": "1818.60",
+        "ask1Size": "21.94",
+        "preOpenPrice": "",
+        "preQty": "",
+        "curPreListingPhase": ""
+      },
+      "cs": 474253239460,
+      "ts": 1794812659031
+    }
+  ],
+  "tickers.ETHUSDT:delta": [
+    {
+      "topic": "tickers.ETHUSDT",
+      "type": "delta",
+      "data": {
+        "symbol": "ETHUSDT",
+        "bid1Price": "1818.59",
+        "bid1Size": "36.66",
+        "ask1Price": "1818.60",
+        "ask1Size": "12.54"
+      },
+      "cs": 474253239613,
+      "ts": 1794812659131
+    },
+    {
+      "topic": "tickers.ETHUSDT",
+      "type": "delta",
+      "data": {
+        "symbol": "ETHUSDT",
+        "ask1Price": "1818.60",
+        "ask1Size": "17.95"
+      },
+      "cs": 474253239681,
+      "ts": 1794812659231
+    },
+    {
+      "topic": "tickers.ETHUSDT",
+      "type": "delta",
+      "data": {
+        "symbol": "ETHUSDT",
+        "bid1Price": "1818.59",
+        "bid1Size": "45.66",
+        "ask1Price": "1818.60",
+        "ask1Size": "5.52"
+      },
+      "cs": 474253239882,
+      "ts": 1794812659331
+    },
+    {
+      "topic": "tickers.ETHUSDT",
+      "type": "delta",
+      "data": {
+        "symbol": "ETHUSDT",
+        "ask1Price": "1818.60",
+        "ask1Size": "10.92"
+      },
+      "cs": 474253240058,
+      "ts": 1794812659431
+    }
+  ],
+  "tickers.1000PEPEUSDT:snapshot": [
+    {
+      "topic": "tickers.1000PEPEUSDT",
+      "type": "snapshot",
+      "data": {
+        "symbol": "1000PEPEUSDT",
+        "tickDirection": "ZeroPlusTick",
+        "price24hPcnt": "-0.042472",
+        "lastPrice": "0.0037650",
+        "prevPrice24h": "0.0039320",
+        "highPrice24h": "0.0040700",
+        "lowPrice24h": "0.0037460",
+        "prevPrice1h": "0.0037680",
+        "markPrice": "0.0037650",
+        "indexPrice": "0.0037680",
+        "openInterest": "10723695200",
+        "openInterestValue": "40374712.43",
+        "turnover24h": "64955682.0344",
+        "volume24h": "16695524800.0000",
+        "fundingIntervalHour": "8",
+        "fundingCap": "0.0043",
+        "singleOpenInterest": "5361847600",
+        "singleOpenInterestValue": "20187356.21",
+        "nextFundingTime": "1794816000000",
+        "fundingRate": "-0.00009943",
+        "bid1Price": "0.0037640",
+        "bid1Size": "265900",
+        "ask1Price": "0.0037650",
+        "ask1Size": "1154900",
+        "preOpenPrice": "",
+        "preQty": "",
+        "curPreListingPhase": ""
+      },
+      "cs": 366515557176,
+      "ts": 1794812658510
+    }
+  ],
+  "tickers.1000PEPEUSDT:delta": [
+    {
+      "topic": "tickers.1000PEPEUSDT",
+      "type": "delta",
+      "data": {
+        "symbol": "1000PEPEUSDT",
+        "bid1Price": "0.0037640",
+        "bid1Size": "865900"
+      },
+      "cs": 366515557550,
+      "ts": 1794812658910
+    },
+    {
+      "topic": "tickers.1000PEPEUSDT",
+      "type": "delta",
+      "data": {
+        "symbol": "1000PEPEUSDT",
+        "bid1Price": "0.0037640",
+        "bid1Size": "265900"
+      },
+      "cs": 366515557582,
+      "ts": 1794812659011
+    },
+    {
+      "topic": "tickers.1000PEPEUSDT",
+      "type": "delta",
+      "data": {
+        "symbol": "1000PEPEUSDT",
+        "turnover24h": "64958945.5364",
+        "volume24h": "16696391600.0000",
+        "ask1Price": "0.0037650",
+        "ask1Size": "423700"
+      },
+      "cs": 366515557662,
+      "ts": 1794812659111
+    },
+    {
+      "topic": "tickers.1000PEPEUSDT",
+      "type": "delta",
+      "data": {
+        "symbol": "1000PEPEUSDT",
+        "ask1Price": "0.0037650",
+        "ask1Size": "970300"
+      },
+      "cs": 366515557711,
+      "ts": 1794812659210
+    }
+  ],
+  "op:subscribe": [
+    {
+      "success": true,
+      "ret_msg": "",
+      "conn_id": "dbqr63be0ju9btq2rbe0-1spzd",
+      "req_id": "",
+      "op": "subscribe"
+    }
+  ]
+}

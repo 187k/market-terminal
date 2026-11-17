@@ -1,0 +1,230 @@
+{
+  "futures.tickers:subscribe": [
+    {
+      "time": 1794814369,
+      "time_ms": 1794814369710,
+      "conn_id": "18b9be2ca7a0fd81",
+      "trace_id": "fb7c5707a0aa59d064a390c33f907c56",
+      "channel": "futures.tickers",
+      "event": "subscribe",
+      "payload": [
+        "BTC_USDT",
+        "ETH_USDT",
+        "PEPE_USDT"
+      ],
+      "result": {
+        "status": "success"
+      }
+    }
+  ],
+  "futures.book_ticker:subscribe": [
+    {
+      "time": 1794814369,
+      "time_ms": 1794814369710,
+      "conn_id": "18b9be2ca7a0fd81",
+      "trace_id": "fb7c5707a0aa59d064a390c33f907c56",
+      "channel": "futures.book_ticker",
+      "event": "subscribe",
+      "payload": [
+        "BTC_USDT",
+        "ETH_USDT",
+        "PEPE_USDT"
+      ],
+      "result": {
+        "status": "success"
+      }
+    }
+  ],
+  "futures.book_ticker:update": [
+    {
+      "time": 1794814369,
+      "time_ms": 1794814369718,
+      "channel": "futures.book_ticker",
+      "event": "update",
+      "result": {
+        "t": 1794814369710,
+        "u": 23665037646,
+        "s": "PEPE_USDT",
+        "b": "0.000003773",
+        "B": 110,
+        "a": "0.000003774",
+        "A": 4
+      }
+    },
+    {
+      "time": 1794814369,
+      "time_ms": 1794814369728,
+      "channel": "futures.book_ticker",
+      "event": "update",
+      "result": {
+        "t": 1794814369727,
+        "u": 114923977241,
+        "s": "ETH_USDT",
+        "b": "1820.15",
+        "B": 2457,
+        "a": "1820.16",
+        "A": 6305
+      }
+    },
+    {
+      "time": 1794814369,
+      "time_ms": 1794814369729,
+      "channel": "futures.book_ticker",
+      "event": "update",
+      "result": {
+        "t": 1794814369729,
+        "u": 23665037688,
+        "s": "PEPE_USDT",
+        "b": "0.000003772",
+        "B": 506,
+        "a": "0.000003774",
+        "A": 4
+      }
+    },
+    {
+      "time": 1794814369,
+      "time_ms": 1794814369738,
+      "channel": "futures.book_ticker",
+      "event": "update",
+      "result": {
+        "t": 1794814369728,
+        "u": 114923977249,
+        "s": "ETH_USDT",
+        "b": "1820.15",
+        "B": 2457,
+        "a": "1820.16",
+        "A": 5728
+      }
+    }
+  ],
+  "futures.tickers:update": [
+    {
+      "time": 1794814370,
+      "time_ms": 1794814370102,
+      "channel": "futures.tickers",
+      "event": "update",
+      "result": [
+        {
+          "contract": "PEPE_USDT",
+          "last": "0.000003777",
+          "change_percentage": "-3.7216",
+          "total_size": "1635619.4",
+          "volume_24h": "327997.4",
+          "volume_24h_base": "3279974000000",
+          "volume_24h_quote": "12388460",
+          "volume_24h_settle": "12388460",
+          "mark_price": "0.000003774",
+          "funding_rate": "-0.000216",
+          "funding_rate_indicative": "-0.000216",
+          "funding_interval": 28800,
+          "funding_offset": 0,
+          "funding_next_apply": 1794816000,
+          "index_price": "0.00000377433",
+          "quanto_base_rate": "",
+          "low_24h": "0.000003722",
+          "high_24h": "0.000004070",
+          "price_type": "last",
+          "change_from": "24h",
+          "change_price": "-0.000000146",
+          "t": 1794814369825
+        }
+      ]
+    },
+    {
+      "time": 1794814370,
+      "time_ms": 1794814370108,
+      "channel": "futures.tickers",
+      "event": "update",
+      "result": [
+        {
+          "contract": "BTC_USDT",
+          "last": "64855.3",
+          "change_percentage": "0.9294",
+          "total_size": "568693676",
+          "volume_24h": "685744107",
+          "volume_24h_base": "68574.4107",
+          "volume_24h_quote": "4447413984",
+          "volume_24h_settle": "4447413984",
+          "mark_price": "64870.85",
+          "funding_rate": "-0.000005",
+          "funding_rate_indicative": "-0.000005",
+          "funding_interval": 28800,
+          "funding_offset": 0,
+          "funding_next_apply": 1794816000,
+          "index_price": "64900.13",
+          "quanto_base_rate": "",
+          "low_24h": "63736.7",
+          "high_24h": "66131.7",
+          "price_type": "last",
+          "change_from": "24h",
+          "change_price": "597.2",
+          "t": 1794814369994
+        }
+      ]
+    },
+    {
+      "time": 1794814370,
+      "time_ms": 1794814370114,
+      "channel": "futures.tickers",
+      "event": "update",
+      "result": [
+        {
+          "contract": "ETH_USDT",
+          "last": "1820.27",
+          "change_percentage": "1.7820",
+          "total_size": "75570999.2",
+          "volume_24h": "214948240.2",
+          "volume_24h_base": "2149482.402",
+          "volume_24h_quote": "3912638330",
+          "volume_24h_settle": "3912638330",
+          "mark_price": "1821.49",
+          "funding_rate": "-0.000036",
+          "funding_rate_indicative": "-0.000036",
+          "funding_interval": 28800,
+          "funding_offset": 0,
+          "funding_next_apply": 1794816000,
+          "index_price": "1822.35",
+          "quanto_base_rate": "",
+          "low_24h": "1772.15",
+          "high_24h": "1844.98",
+          "price_type": "last",
+          "change_from": "24h",
+          "change_price": "31.87",
+          "t": 1794814370097
+        }
+      ]
+    },
+    {
+      "time": 1794814371,
+      "time_ms": 1794814371096,
+      "channel": "futures.tickers",
+      "event": "update",
+      "result": [
+        {
+          "contract": "BTC_USDT",
+          "last": "64873.8",
+          "change_percentage": "0.9582",
+          "total_size": "568709658",
+          "volume_24h": "685760089",
+          "volume_24h_base": "68576.0089",
+          "volume_24h_quote": "4448786292",
+          "volume_24h_settle": "4448786292",
+          "mark_price": "64869.7",
+          "funding_rate": "-0.000005",
+          "funding_rate_indicative": "-0.000005",
+          "funding_interval": 28800,
+          "funding_offset": 0,
+          "funding_next_apply": 1794816000,
+          "index_price": "64898.78",
+          "quanto_base_rate": "",
+          "low_24h": "63736.7",
+          "high_24h": "66131.7",
+          "price_type": "last",
+          "change_from": "24h",
+          "change_price": "615.7",
+          "t": 1794814371063
+        }
+      ]
+    }
+  ]
+}

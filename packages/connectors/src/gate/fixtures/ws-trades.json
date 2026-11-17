@@ -1,0 +1,85 @@
+{
+  "futures.trades:subscribe": [
+    {
+      "time": 1794905643,
+      "time_ms": 1794905643015,
+      "conn_id": "7f49f71f9c99f559",
+      "trace_id": "580825a63166c219fe9fb04743da50a2",
+      "channel": "futures.trades",
+      "event": "subscribe",
+      "payload": [
+        "BTC_USDT",
+        "ETH_USDT"
+      ],
+      "result": {
+        "status": "success"
+      }
+    }
+  ],
+  "futures.trades:update": [
+    {
+      "time": 1794905643,
+      "time_ms": 1794905643463,
+      "channel": "futures.trades",
+      "event": "update",
+      "result": [
+        {
+          "id": 882952076,
+          "size": 3968,
+          "create_time": 1794905643,
+          "create_time_ms": 1794905643462,
+          "price": "64303.2",
+          "contract": "BTC_USDT"
+        }
+      ]
+    },
+    {
+      "time": 1794905643,
+      "time_ms": 1794905643498,
+      "channel": "futures.trades",
+      "event": "update",
+      "result": [
+        {
+          "id": 980551382,
+          "size": -39,
+          "create_time": 1794905643,
+          "create_time_ms": 1794905643483,
+          "price": "1820.09",
+          "contract": "ETH_USDT"
+        }
+      ]
+    },
+    {
+      "time": 1794905643,
+      "time_ms": 1794905643502,
+      "channel": "futures.trades",
+      "event": "update",
+      "result": [
+        {
+          "id": 980551383,
+          "size": -52,
+          "create_time": 1794905643,
+          "create_time_ms": 1794905643483,
+          "price": "1820.09",
+          "contract": "ETH_USDT"
+        }
+      ]
+    },
+    {
+      "time": 1794905643,
+      "time_ms": 1794905643504,
+      "channel": "futures.trades",
+      "event": "update",
+      "result": [
+        {
+          "id": 980551384,
+          "size": -104,
+          "create_time": 1794905643,
+          "create_time_ms": 1794905643483,
+          "price": "1820.09",
+          "contract": "ETH_USDT"
+        }
+      ]
+    }
+  ]
+}

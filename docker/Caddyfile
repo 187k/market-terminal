@@ -1,0 +1,17 @@
+# HTTPS in front of the dashboard (docker-compose.prod.yml). Caddy obtains and renews a
+# Let's Encrypt certificate for $DOMAIN automatically; the DNS record must point to this
+# server and ports 80 and 443 must be reachable. WebSocket upgrades (/ws) pass through.
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "no-referrer"
+		-Server
+	}
+
+	reverse_proxy web:80
+}

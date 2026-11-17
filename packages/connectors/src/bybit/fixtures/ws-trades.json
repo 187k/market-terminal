@@ -1,0 +1,137 @@
+{
+  "op:subscribe": [
+    {
+      "success": true,
+      "ret_msg": "",
+      "conn_id": "dbqr5fqh90prqjp27d30-29zew",
+      "req_id": "",
+      "op": "subscribe"
+    }
+  ],
+  "publicTrade:snapshot": [
+    {
+      "topic": "publicTrade.ETHUSDT",
+      "type": "snapshot",
+      "ts": 1794905643493,
+      "data": [
+        {
+          "T": 1794905643491,
+          "s": "ETHUSDT",
+          "S": "Sell",
+          "v": "0.01",
+          "p": "1820.00",
+          "L": "MinusTick",
+          "i": "f722b5ab-261e-5872-aa7b-e63954e9f44b",
+          "BT": false,
+          "RPI": false,
+          "seq": 474894938192
+        },
+        {
+          "T": 1794905643491,
+          "s": "ETHUSDT",
+          "S": "Sell",
+          "v": "4.61",
+          "p": "1820.00",
+          "L": "ZeroMinusTick",
+          "i": "7139a9dd-71a9-56fd-a0dd-7c212dcaf09d",
+          "BT": false,
+          "RPI": false,
+          "seq": 474894938192
+        }
+      ]
+    },
+    {
+      "topic": "publicTrade.ETHUSDT",
+      "type": "snapshot",
+      "ts": 1794905643502,
+      "data": [
+        {
+          "T": 1794905643500,
+          "s": "ETHUSDT",
+          "S": "Sell",
+          "v": "0.88",
+          "p": "1820.00",
+          "L": "ZeroMinusTick",
+          "i": "30451f8a-d35a-5dc1-bffa-da418f3f1601",
+          "BT": false,
+          "RPI": false,
+          "seq": 474894938389
+        },
+        {
+          "T": 1794905643500,
+          "s": "ETHUSDT",
+          "S": "Sell",
+          "v": "6.02",
+          "p": "1820.00",
+          "L": "ZeroMinusTick",
+          "i": "4f41ded0-0715-5c0b-8799-e987b4308f42",
+          "BT": false,
+          "RPI": false,
+          "seq": 474894938389
+        }
+      ]
+    },
+    {
+      "topic": "publicTrade.BTCUSDT",
+      "type": "snapshot",
+      "ts": 1794905643644,
+      "data": [
+        {
+          "T": 1794905643642,
+          "s": "BTCUSDT",
+          "S": "Sell",
+          "v": "0.007",
+          "p": "64301.00",
+          "L": "ZeroMinusTick",
+          "i": "5231b24f-065d-51eb-a4c7-3b542268205e",
+          "BT": false,
+          "RPI": false,
+          "seq": 848233326985
+        },
+        {
+          "T": 1794905643642,
+          "s": "BTCUSDT",
+          "S": "Sell",
+          "v": "0.001",
+          "p": "64301.00",
+          "L": "ZeroMinusTick",
+          "i": "98fac4c9-ebdf-5573-8f8c-eef710709256",
+          "BT": false,
+          "RPI": false,
+          "seq": 848233326985
+        },
+        {
+          "T": 1794905643642,
+          "s": "BTCUSDT",
+          "S": "Sell",
+          "v": "0.012",
+          "p": "64301.00",
+          "L": "ZeroMinusTick",
+          "i": "f7b13aed-f96f-5f59-8148-33e30211b60f",
+          "BT": false,
+          "RPI": false,
+          "seq": 848233326985
+        }
+      ]
+    },
+    {
+      "topic": "publicTrade.ETHUSDT",
+      "type": "snapshot",
+      "ts": 1794905643806,
+      "data": [
+        {
+          "T": 1794905643804,
+          "s": "ETHUSDT",
+          "S": "Buy",
+          "v": "0.01",
+          "p": "1820.01",
+          "L": "PlusTick",
+          "i": "a1f542f9-d64f-5bdd-ae96-7523c6e4925b",
+          "BT": false,
+          "RPI": false,
+          "seq": 474894940992
+        }
+      ]
+    }
+  ]
+}

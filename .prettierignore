@@ -1,0 +1,10 @@
+node_modules
+dist
+coverage
+package-lock.json
+packages/db/src/generated
+packages/db/prisma/migrations
+docs
+prompt.md
+# recorded exchange payloads: kept exactly as tools/record.mjs wrote them
+**/fixtures/**

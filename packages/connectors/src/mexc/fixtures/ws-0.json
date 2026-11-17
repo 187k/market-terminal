@@ -1,0 +1,173 @@
+{
+  "rs.sub.ticker": [
+    {
+      "channel": "rs.sub.ticker",
+      "data": "success",
+      "ts": 1794877017637
+    },
+    {
+      "channel": "rs.sub.ticker",
+      "data": "success",
+      "ts": 1794877017637
+    },
+    {
+      "channel": "rs.sub.ticker",
+      "data": "success",
+      "ts": 1794877017637
+    }
+  ],
+  "push.ticker": [
+    {
+      "symbol": "ETH_USDT",
+      "data": {
+        "symbol": "ETH_USDT",
+        "lastPrice": 1812.69,
+        "riseFallRate": -0.0036,
+        "fairPrice": 1812.77,
+        "indexPrice": 1813.7,
+        "volume24": 58711878,
+        "amount24": 1066856995.6599,
+        "maxBidPrice": 2176.44,
+        "minAskPrice": 1450.96,
+        "lower24Price": 1786.05,
+        "high24Price": 1865.9,
+        "timestamp": 1794877019078,
+        "bid1": 1812.69,
+        "ask1": 1812.7,
+        "holdVol": 123270808,
+        "riseFallValue": -6.6,
+        "fundingRate": -0.000035,
+        "zone": "UTC+8",
+        "riseFallRates": [
+          -0.0036,
+          -0.1556,
+          -0.2475,
+          -0.0543,
+          -0.1512,
+          -0.4159
+        ],
+        "riseFallRatesOfTimezone": [
+          -0.0117,
+          -0.0038,
+          -0.0036
+        ]
+      },
+      "channel": "push.ticker",
+      "ts": 1794877019078
+    },
+    {
+      "symbol": "BTC_USDT",
+      "data": {
+        "symbol": "BTC_USDT",
+        "lastPrice": 64585.6,
+        "riseFallRate": 0.0022,
+        "fairPrice": 64588.4,
+        "indexPrice": 64611.2,
+        "volume24": 413920468,
+        "amount24": 2678272896.23798,
+        "maxBidPrice": 71072.3,
+        "minAskPrice": 58150,
+        "lower24Price": 63871,
+        "high24Price": 65662.2,
+        "timestamp": 1794877019078,
+        "bid1": 64585.5,
+        "ask1": 64585.6,
+        "holdVol": 425564840,
+        "riseFallValue": 144.9,
+        "fundingRate": 0.000016,
+        "zone": "UTC+8",
+        "riseFallRates": [
+          0.0022,
+          -0.1445,
+          -0.2057,
+          -0.0036,
+          -0.1658,
+          -0.3167
+        ],
+        "riseFallRatesOfTimezone": [
+          -0.011,
+          -0.0041,
+          0.0022
+        ]
+      },
+      "channel": "push.ticker",
+      "ts": 1794877019078
+    },
+    {
+      "symbol": "PEPE_USDT",
+      "data": {
+        "symbol": "PEPE_USDT",
+        "lastPrice": 0.0000038954,
+        "riseFallRate": 0.022,
+        "fairPrice": 0.0000038954,
+        "indexPrice": 0.0000038971,
+        "volume24": 698814,
+        "amount24": 26645863.455,
+        "maxBidPrice": 0.0000046765,
+        "minAskPrice": 0.0000031176,
+        "lower24Price": 0.0000037053,
+        "high24Price": 0.0000039449,
+        "timestamp": 1794877019105,
+        "bid1": 0.0000038953,
+        "ask1": 0.0000038954,
+        "holdVol": 2965592,
+        "riseFallValue": 8.41e-8,
+        "fundingRate": -0.00004,
+        "zone": "UTC+8",
+        "riseFallRates": [
+          0.022,
+          -0.2688,
+          0.0011,
+          0.4929,
+          0.0471,
+          -0.1845
+        ],
+        "riseFallRatesOfTimezone": [
+          0.0056,
+          -0.0021,
+          0.022
+        ]
+      },
+      "channel": "push.ticker",
+      "ts": 1794877019105
+    },
+    {
+      "symbol": "ETH_USDT",
+      "data": {
+        "symbol": "ETH_USDT",
+        "lastPrice": 1812.69,
+        "riseFallRate": -0.0036,
+        "fairPrice": 1812.77,
+        "indexPrice": 1813.7,
+        "volume24": 58711878,
+        "amount24": 1066856995.6599,
+        "maxBidPrice": 2176.44,
+        "minAskPrice": 1450.96,
+        "lower24Price": 1786.05,
+        "high24Price": 1865.9,
+        "timestamp": 1794877019078,
+        "bid1": 1812.69,
+        "ask1": 1812.7,
+        "holdVol": 123270808,
+        "riseFallValue": -6.6,
+        "fundingRate": -0.000035,
+        "zone": "UTC+8",
+        "riseFallRates": [
+          -0.0036,
+          -0.1556,
+          -0.2475,
+          -0.0543,
+          -0.1512,
+          -0.4159
+        ],
+        "riseFallRatesOfTimezone": [
+          -0.0117,
+          -0.0038,
+          -0.0036
+        ]
+      },
+      "channel": "push.ticker",
+      "ts": 1794877019078
+    }
+  ]
+}

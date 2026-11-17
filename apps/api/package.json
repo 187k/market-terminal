@@ -1,0 +1,21 @@
+{
+  "name": "@mip/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --conditions=source --clear-screen=false src/main.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/main.js",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^11.1.5",
+    "@fastify/websocket": "^11.3.7",
+    "@mip/bus": "0.1.0",
+    "@mip/core": "0.1.0",
+    "@mip/db": "0.1.0",
+    "fastify": "^5.12.8",
+    "zod": "^4.6.7"
+  }
+}

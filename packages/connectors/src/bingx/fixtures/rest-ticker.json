@@ -1,0 +1,60 @@
+{
+  "code": 0,
+  "msg": "",
+  "data": [
+    {
+      "symbol": "BTC-USDT",
+      "priceChange": "546.6",
+      "priceChangePercent": "0.85",
+      "lastPrice": "64872.1",
+      "lastQty": "0.0003",
+      "highPrice": "66093.4",
+      "lowPrice": "63741.3",
+      "volume": "12604.6100",
+      "quoteVolume": "819604988.12",
+      "openPrice": "64325.5",
+      "openTime": 1794728000000,
+      "closeTime": 1794814400000,
+      "askPrice": "64874.6",
+      "askQty": "0.0141",
+      "bidPrice": "64874.4",
+      "bidQty": "96.8004"
+    },
+    {
+      "symbol": "ETH-USDT",
+      "priceChange": "30.27",
+      "priceChangePercent": "1.69",
+      "lastPrice": "1820.69",
+      "lastQty": "0.07",
+      "highPrice": "1843.71",
+      "lowPrice": "1772.10",
+      "volume": "198194.18",
+      "quoteVolume": "360154503.50",
+      "openPrice": "1790.42",
+      "openTime": 1794728000000,
+      "closeTime": 1794814400000,
+      "askPrice": "1820.81",
+      "askQty": "525.92",
+      "bidPrice": "1820.80",
+      "bidQty": "391.09"
+    },
+    {
+      "symbol": "1000PEPE-USDT",
+      "priceChange": "-0.0001560",
+      "priceChangePercent": "-3.96",
+      "lastPrice": "0.0037713",
+      "lastQty": "2293",
+      "highPrice": "0.0040692",
+      "lowPrice": "0.0037227",
+      "volume": "10363398210",
+      "quoteVolume": "40395081.80",
+      "openPrice": "0.0039273",
+      "openTime": 1794728000000,
+      "closeTime": 1794814400000,
+      "askPrice": "0.0037731",
+      "askQty": "61764",
+      "bidPrice": "0.0037730",
+      "bidQty": "1079159"
+    }
+  ]
+}

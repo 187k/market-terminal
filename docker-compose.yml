@@ -1,0 +1,111 @@
+# Infrastructure only (for local development):   docker compose up -d
+# Whole platform:                                 docker compose --profile app up -d --build
+#
+# Ports bind to 127.0.0.1 so nothing is exposed to the network while the platform is local.
+
+name: mip
+
+x-app: &app
+  image: mip-app:local
+  build:
+    context: .
+    target: runtime
+  env_file: .env
+  environment:
+    NODE_ENV: production
+    LOG_PRETTY: 'false'
+    API_HOST: 0.0.0.0
+    DATABASE_URL: postgresql://${POSTGRES_USER:-mip}:${POSTGRES_PASSWORD:-mip}@postgres:5432/${POSTGRES_DB:-mip}
+    REDIS_URL: redis://redis:6379
+  restart: unless-stopped
+  profiles: [app]
+  depends_on:
+    redis:
+      condition: service_healthy
+    migrate:
+      condition: service_completed_successfully
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-mip}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mip}
+      POSTGRES_DB: ${POSTGRES_DB:-mip}
+    ports:
+      - '127.0.0.1:${POSTGRES_PORT:-5433}:5432'
+    volumes:
+      # PostgreSQL 18 images keep data under /var/lib/postgresql/<version>/
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  redis:
+    image: redis:8-alpine
+    # Redis holds only live state, sessions and heartbeats; nothing here needs to survive a restart.
+    command: ['redis-server', '--save', '', '--appendonly', 'no']
+    ports:
+      - '127.0.0.1:${REDIS_PORT:-6379}:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  migrate:
+    image: mip-migrate:local
+    build:
+      context: .
+      target: migrate
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-mip}:${POSTGRES_PASSWORD:-mip}@postgres:5432/${POSTGRES_DB:-mip}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles: [app]
+    restart: 'no'
+
+  collector:
+    <<: *app
+    command: ['node', 'apps/collector/dist/main.js']
+
+  engine:
+    <<: *app
+    command: ['node', 'apps/engine/dist/main.js']
+
+  api:
+    <<: *app
+    command: ['node', 'apps/api/dist/main.js']
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+      retries: 5
+
+  web:
+    image: mip-web:local
+    build:
+      context: .
+      target: web
+    ports:
+      - '127.0.0.1:${WEB_PORT:-8080}:80'
+    depends_on:
+      api:
+        condition: service_healthy
+    profiles: [app]
+    restart: unless-stopped
+
+volumes:
+  pgdata:

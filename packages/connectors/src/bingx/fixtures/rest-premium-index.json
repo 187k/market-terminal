@@ -1,0 +1,39 @@
+{
+  "code": 0,
+  "msg": "",
+  "data": [
+    {
+      "symbol": "BTC-USDT",
+      "markPrice": "64868.4",
+      "indexPrice": "64897.4",
+      "lastFundingRate": "-0.00000020",
+      "nextFundingTime": 1794816000000,
+      "fundingIntervalHours": 8,
+      "minFundingRate": "-0.003000",
+      "maxFundingRate": "0.003000",
+      "updateTime": 1794787200000
+    },
+    {
+      "symbol": "ETH-USDT",
+      "markPrice": "1820.51",
+      "indexPrice": "1821.44",
+      "lastFundingRate": "-0.00001100",
+      "nextFundingTime": 1794816000000,
+      "fundingIntervalHours": 8,
+      "minFundingRate": "-0.003000",
+      "maxFundingRate": "0.003000",
+      "updateTime": 1794787200000
+    },
+    {
+      "symbol": "1000PEPE-USDT",
+      "markPrice": "0.0037721",
+      "indexPrice": "0.0037729",
+      "lastFundingRate": "-0.00007500",
+      "nextFundingTime": 1794816000000,
+      "fundingIntervalHours": 8,
+      "minFundingRate": "-0.02",
+      "maxFundingRate": "0.02",
+      "updateTime": 1794787200000
+    }
+  ]
+}

@@ -1,0 +1,166 @@
+{
+  "event:subscribe": [
+    {
+      "event": "subscribe",
+      "arg": {
+        "instType": "USDT-FUTURES",
+        "channel": "ticker",
+        "instId": "BTCUSDT"
+      }
+    },
+    {
+      "event": "subscribe",
+      "arg": {
+        "instType": "USDT-FUTURES",
+        "channel": "ticker",
+        "instId": "ETHUSDT"
+      }
+    },
+    {
+      "event": "subscribe",
+      "arg": {
+        "instType": "USDT-FUTURES",
+        "channel": "ticker",
+        "instId": "PEPEUSDT"
+      }
+    }
+  ],
+  "ticker:snapshot": [
+    {
+      "action": "snapshot",
+      "arg": {
+        "instType": "USDT-FUTURES",
+        "channel": "ticker",
+        "instId": "ETHUSDT"
+      },
+      "data": [
+        {
+          "instId": "ETHUSDT",
+          "lastPr": "1819.59",
+          "bidPr": "1819.6",
+          "askPr": "1819.61",
+          "bidSz": "50",
+          "askSz": "36.94",
+          "open24h": "1787.97",
+          "high24h": "1844.85",
+          "low24h": "1771.89",
+          "change24h": "0.01768",
+          "fundingRate": "-0.000013",
+          "nextFundingTime": "1794816000000",
+          "markPrice": "1819.59",
+          "indexPrice": "1820.2971739130434783",
+          "holdingAmount": "768535.50000000039",
+          "baseVolume": "687924.08",
+          "quoteVolume": "1250082326.6243",
+          "openUtc": "1834.31",
+          "symbolType": "1",
+          "symbol": "ETHUSDT",
+          "ts": "1794814380831"
+        }
+      ],
+      "ts": 1794814380833
+    },
+    {
+      "action": "snapshot",
+      "arg": {
+        "instType": "USDT-FUTURES",
+        "channel": "ticker",
+        "instId": "PEPEUSDT"
+      },
+      "data": [
+        {
+          "instId": "PEPEUSDT",
+          "lastPr": "0.0000037692",
+          "bidPr": "0.0000037708",
+          "askPr": "0.0000037713",
+          "bidSz": "125224000",
+          "askSz": "555750000",
+          "open24h": "0.0000039268",
+          "high24h": "0.0000040699",
+          "low24h": "0.00000372",
+          "change24h": "-0.04013",
+          "fundingRate": "-0.000317",
+          "nextFundingTime": "1794816000000",
+          "markPrice": "0.0000037692",
+          "indexPrice": "0.0000037708086957",
+          "holdingAmount": "7260732007578",
+          "baseVolume": "4643195694000",
+          "quoteVolume": "18085361.9709692",
+          "openUtc": "0.0000038744",
+          "symbolType": "1",
+          "symbol": "PEPEUSDT",
+          "ts": "1794814380832"
+        }
+      ],
+      "ts": 1794814380833
+    },
+    {
+      "action": "snapshot",
+      "arg": {
+        "instType": "USDT-FUTURES",
+        "channel": "ticker",
+        "instId": "BTCUSDT"
+      },
+      "data": [
+        {
+          "instId": "BTCUSDT",
+          "lastPr": "64852.1",
+          "bidPr": "64852",
+          "askPr": "64852.1",
+          "bidSz": "1.8766",
+          "askSz": "1.964",
+          "open24h": "64249.8",
+          "high24h": "66110",
+          "low24h": "63738.4",
+          "change24h": "0.00937",
+          "fundingRate": "-0.000023",
+          "nextFundingTime": "1794816000000",
+          "markPrice": "64852.1",
+          "indexPrice": "64876.5997826086956522",
+          "holdingAmount": "37313.848200000087",
+          "baseVolume": "44227.933",
+          "quoteVolume": "2871406571.99742",
+          "openUtc": "65309.5",
+          "symbolType": "1",
+          "symbol": "BTCUSDT",
+          "ts": "1794814380831"
+        }
+      ],
+      "ts": 1794814380833
+    },
+    {
+      "action": "snapshot",
+      "arg": {
+        "instType": "USDT-FUTURES",
+        "channel": "ticker",
+        "instId": "ETHUSDT"
+      },
+      "data": [
+        {
+          "instId": "ETHUSDT",
+          "lastPr": "1819.59",
+          "bidPr": "1819.6",
+          "askPr": "1819.61",
+          "bidSz": "50",
+          "askSz": "36.94",
+          "open24h": "1787.97",
+          "high24h": "1844.85",
+          "low24h": "1771.89",
+          "change24h": "0.01768",
+          "fundingRate": "-0.000013",
+          "nextFundingTime": "1794816000000",
+          "markPrice": "1819.59",
+          "indexPrice": "1820.3667391304347826",
+          "holdingAmount": "768535.50000000039",
+          "baseVolume": "687924.08",
+          "quoteVolume": "1250082326.6243",
+          "openUtc": "1834.31",
+          "symbolType": "1",
+          "symbol": "ETHUSDT",
+          "ts": "1794814380935"
+        }
+      ],
+      "ts": 1794814380937
+    }
+  ]
+}
