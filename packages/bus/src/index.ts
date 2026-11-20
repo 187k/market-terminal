@@ -5,3 +5,4 @@ export * from './health.js';
 export * from './market.js';
 export * from './signals.js';
 export * from './trades.js';
+export * from './trade-feed.js';

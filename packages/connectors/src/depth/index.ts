@@ -1,8 +1,8 @@
 import type { ExchangeId, Logger } from '@mip/core';
 import { ExchangeApiError } from '../base/errors.js';
-import { sharedRateLimiter } from '../base/rate-limiter.js';
-import { RestClient } from '../base/rest-client.js';
+import type { RestClient } from '../base/rest-client.js';
 import { num } from '../base/symbols.js';
+import { createPublicRestClient } from '../public-rest.js';
 
 /** [price, size in base units], best level first. */
 export type BookLevel = [number, number];
@@ -101,7 +101,6 @@ export function parseOrderBook(
 }
 
 interface Endpoint {
-  baseUrl: string;
   request: (symbol: string) => {
     method?: 'GET' | 'POST';
     path: string;
@@ -109,52 +108,35 @@ interface Endpoint {
     body?: unknown;
   };
   weight?: number;
-  headers?: Record<string, string>;
-  limit: { limit: number; windowMs: number };
 }
 
-/** On-demand depth requests (50 levels; Hyperliquid returns 20). Same limiter names as the connectors. */
+/** On-demand depth requests (50 levels; Hyperliquid returns 20). Hosts and limits: PUBLIC_REST. */
 const ENDPOINTS: Record<ExchangeId, Endpoint> = {
   bybit: {
-    baseUrl: 'https://api.bybit.com',
     request: (s) => ({ path: '/v5/market/orderbook', query: { category: 'linear', symbol: s, limit: 50 } }),
-    limit: { limit: 600, windowMs: 5_000 },
   },
   binance: {
-    baseUrl: 'https://fapi.binance.com',
     request: (s) => ({ path: '/fapi/v1/depth', query: { symbol: s, limit: 50 } }),
     weight: 2,
-    limit: { limit: 2_400, windowMs: 60_000 },
   },
   mexc: {
-    baseUrl: 'https://api.mexc.com',
     request: (s) => ({ path: `/api/v1/contract/depth/${s}`, query: { limit: 50 } }),
-    limit: { limit: 10, windowMs: 2_000 },
   },
   hyperliquid: {
-    baseUrl: 'https://api.hyperliquid.xyz',
     request: (s) => ({ method: 'POST', path: '/info', body: { type: 'l2Book', coin: s } }),
     weight: 2,
-    limit: { limit: 1_200, windowMs: 60_000 },
   },
   bitget: {
-    baseUrl: 'https://api.bitget.com',
     request: (s) => ({
       path: '/api/v2/mix/market/merge-depth',
       query: { symbol: s, productType: 'USDT-FUTURES', limit: 50 },
     }),
-    limit: { limit: 20, windowMs: 1_000 },
   },
   bingx: {
-    baseUrl: 'https://open-api.bingx.com',
     request: (s) => ({ path: '/openApi/swap/v2/quote/depth', query: { symbol: s, limit: 50 } }),
-    limit: { limit: 500, windowMs: 10_000 },
   },
   gate: {
-    baseUrl: 'https://api.gateio.ws',
     request: (s) => ({ path: '/api/v4/futures/usdt/order_book', query: { contract: s, limit: 50 } }),
-    headers: { 'X-Gate-Size-Decimal': '1' },
-    limit: { limit: 200, windowMs: 10_000 },
   },
 };
 
@@ -216,17 +198,7 @@ export class DepthFetcher {
   #client(exchange: ExchangeId): RestClient {
     let c = this.#clients.get(exchange);
     if (!c) {
-      const ep = ENDPOINTS[exchange];
-      c = new RestClient({
-        exchange,
-        baseUrl: this.baseUrls[exchange] ?? ep.baseUrl,
-        limiter: sharedRateLimiter({ name: `${exchange}/rest`, windows: [ep.limit] }),
-        logger: this.#log,
-        ...(ep.headers ? { headers: ep.headers } : {}),
-        timeoutMs: 5_000,
-        maxRetries: 1,
-        statusPolicy: exchange === 'bybit' ? { 403: { kind: 'banned', pauseMs: 10 * 60_000 } } : {},
-      });
+      c = createPublicRestClient(exchange, this.#log, this.baseUrls[exchange]);
       this.#clients.set(exchange, c);
     }
     return c;

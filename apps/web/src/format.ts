@@ -80,3 +80,42 @@ export function formatDuration(ms: number): string {
   if (h < 48) return `${h}h ${String(m % 60).padStart(2, '0')}m`;
   return `${Math.floor(h / 24)}d ${h % 24}h`;
 }
+
+/** Decimal places of a tick size (0.01 → 2, 0.5 → 1, 1e-7 → 7). */
+export function tickDecimals(tick: number): number {
+  for (let d = 0; d < 12; d++) {
+    const x = tick * 10 ** d;
+    if (Math.round(x) >= 1 && Math.abs(x - Math.round(x)) < 1e-6) return d;
+  }
+  return 12;
+}
+
+/**
+ * Decimals to show prices with: the instrument's tick size when known, else five significant
+ * figures of a reference price (Hyperliquid publishes no tick size; its prices have at most
+ * five significant figures), else four.
+ */
+export function priceDecimals(tick: number | null, reference: number | null): number {
+  if (tick !== null && tick > 0) return tickDecimals(tick);
+  if (reference !== null && reference > 0)
+    return Math.min(8, Math.max(0, 5 - (Math.floor(Math.log10(reference)) + 1)));
+  return 4;
+}
+
+/** Order and trade sizes: three significant figures below 1, compact above 10,000. */
+export function formatSize(v: number): string {
+  if (v === 0) return '0';
+  if (v < 1) return Number(v.toPrecision(3)).toString();
+  if (v < 10_000) return v.toLocaleString('en-US', { maximumFractionDigits: 3 });
+  return formatCompact(v);
+}
+
+/** A percentage that may be tiny (an order-book spread): two significant figures. */
+export function formatSmallPct(v: number): string {
+  return `${Number(v.toPrecision(2))} %`;
+}
+
+/** Price with a fixed number of decimals (the instrument's tick precision), grouped thousands. */
+export function formatFixed(v: number, decimals: number): string {
+  return v.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+}

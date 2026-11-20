@@ -17,3 +17,5 @@ export { isZeroHash } from './hyperliquid/parse.js';
 export { MexcConnector, MEXC_CAPABILITIES } from './mexc/index.js';
 export * from './coingecko/index.js';
 export * from './depth/index.js';
+export * from './public-rest.js';
+export * from './klines/index.js';

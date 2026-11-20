@@ -36,7 +36,7 @@ Unit tests cover every formula (`packages/analytics`) and every scanner on synth
   - The collector and engine send no Binance REST requests during the ban. The ban persists in Redis across restarts.
   - A collector restarted during the ban waits for it to end before loading Binance's instruments ("waiting for the exchange's ban / rate limit to end"). Binance therefore stays offline until then.
   - The engine's spread scanner reports Binance order books as unavailable and labels the result preliminary. Until a fix in Stage 5 it waited on the ban and stalled every scanner.
-- Soak on the development PC: §5.
+- Soak on the development PC (§5): 105 minutes without a process restart or a stalled scanner. Bitget and BingX reconnected 2 and 3 times on their own. Binance came back by itself 31 s after its ban ended.
 
 ## 4. Performance
 
@@ -49,11 +49,38 @@ Measured on the development PC with 100 assets (619 instruments), all seven exch
 | `/api/health` latency            | p50 7 ms, p95 13 ms                                                                                    |
 | Redis memory                     | 35 MB                                                                                                  |
 | PostgreSQL                       | 58 MB in total; per-minute snapshots about 175 bytes per instrument-minute, about 150 MB per day, capped near 1.1 GB by the 7-day retention |
-| Containers (memory, CPU of one core) | see §5                                                                                              |
+| Containers                       | about 900 MB of memory in total after 105 min (collector 320, engine 245, PostgreSQL 150, API 117, Redis 48, web 17); CPU on average about a fifth of one core in total (collector 16 %, others ≤ 2.5 %). Details in §5. |
 
 ## 5. Soak on the development PC
 
-To be filled in when the soak finishes.
+`npm run soak -- --minutes 105 --interval 30`, 04:09–05:54 local, 210 samples, no sampling gaps (the PC stayed awake).
+
+| Area                  | Result                                                                                                                                                                                                                   |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Exchanges             | Bybit, MEXC, Hyperliquid, Bitget, BingX, Gate `ok` in 210/210 samples and 100 % fresh on average (BingX 99.8 %: one sample at 45/90 during a reconnect). Reconnects: Bitget 2, BingX 3, others 0; all recovered on their own. |
+| Binance after its ban | Waited, sending nothing, until the ban ended at 05:45:49. It was `ok` with 87/87 instruments at 05:46:20 (the first sample after), with no intervention.                                                                          |
+| Processes             | No missing heartbeat and no restart, apart from one deliberate API restart (the polling-fallback test).                                                                                                                        |
+| Scanners              | No stalled run and no errors. Run time p50 / p95 / max: fair price 0.1 / 0.2 / 0.8 ms, OI 2.4 / 6.9 / 25 ms, funding 1.9 / 3.0 / 10.9 ms, spread 0.2 / 197 / 471 ms (order books), TWAP 32 / 55 / 131 ms.            |
+| API                   | `/api/health` 0/210 failures; p50 6 ms, p95 10 ms, max 30 ms.                                                                                                                                                       |
+| Telegram              | Signals opened during the soak: open interest 9, funding 3, spread 2, TWAP 18, **all sent, 0 failed**. Fair price opened none.                                                                                           |
+| Redis                 | 32–42 MB used.                                                                                                                                                                                                           |
+
+Containers (memory start → end, growth per hour in the first / second half, CPU of one core avg / max):
+
+| Container | Memory MB         | Growth MB/h        | CPU %      |
+| --------- | ----------------- | ------------------ | ---------- |
+| collector | 154 → 318 (max 323) | 116 / 73          | 16 / 48    |
+| engine    | 222 → 245          | 23 / 2            | 2.5 / 27   |
+| api       | 95 → 117           | 21 / 5            | 2.2 / 13   |
+| postgres  | 135 → 150          | 15 / 1.5          | 0.7 / 4.6  |
+| redis     | 52 → 48            | 3 / −8            | 1.0 / 4.0  |
+| web       | 17 → 17            | —                 | 0.2 / 0.7  |
+
+**Collector memory needs the 24 h soak.**
+- Measurements: with a constant 531 instruments (before Binance joined), it grew 154 → 289 MB in 90 minutes, and the rate fell from 127 MB/h (first half) to 44 MB/h (second half). Binance's 87 instruments then added about 27 MB.
+- The engine, API and PostgreSQL levelled off within the hour.
+- A code scan found no unbounded collection: the trade buffer is capped, rate-limiter logs expire, socket timers are cleared per socket, and maps are keyed by exchange, symbol or connection name.
+- The pattern fits V8 growing its heap during warm-up, but 105 minutes cannot rule out a slow leak. The soak summary now reports the growth rate of each half. On the server, a second-half rate near zero after a few hours means warm-up; a steady rate means a leak to investigate with a heap snapshot.
 
 ## 6. Telegram
 
@@ -61,7 +88,8 @@ To be filled in when the soak finishes.
   - The configured chat ID did not belong to the group the bots were in ("chat not found" for all five). It was replaced with the group's ID read from the bots' own updates.
   - The first TWAP bot returned 502 Bad Gateway for every Bot API call while the others worked; the user replaced it.
 - **Delivery** for signals opened after the fix (from 03:56 local): funding 1, open interest 1, TWAP 4 messages sent, 0 failed. One TWAP message was edited after a significant change, and the OI message got its "resolved" edit. A failed edit marks the signal `failed`, and none did.
-- **Not yet seen:** a fair-price or spread message. Those scanners have not opened a signal since the fix, so their topic IDs are unconfirmed.
+- **During the soak** (§5), 32 more messages: open interest 9, funding 3, spread 2, TWAP 18, all sent. That confirms four of the five topics.
+- **Not yet seen:** a fair-price message. That scanner has not opened a signal since the fix (it opened 13 in the previous 24 h), so its topic ID is unconfirmed.
 - Signals that failed during the misconfiguration are not re-sent. This is by design: a message posted hours late would mislead.
 - Pacing (1 message per 1.1 s and 18 per minute per bot), 429 `retry_after`, "message is not modified" and rejected tokens are covered by tests against a fake Bot API. So are the new 5xx retry and the no-retry-on-timeout rule.
 
@@ -83,7 +111,7 @@ To be filled in when the soak finishes.
 
 ## 9. Left for the production server
 
-- A 24 h soak (`npm run soak -- --minutes 1440`). The PC sleeps when idle, so long runs here are not meaningful.
+- A 24 h soak (`npm run soak -- --minutes 1440`), watching **collector memory** in particular (§5). The PC sleeps when idle, so long runs here are not meaningful.
 - Caddy issuing and renewing the certificate for the real domain; the dashboard over HTTPS with `COOKIE_SECURE=true`.
-- Telegram: a message in every topic, an edit after a significant change, and the "resolved" edit.
+- Telegram: the first fair-price message (its topic ID); the user confirming that the messages appear in the right topics.
 - Copying backups off the server (rsync or object storage), which depends on the hosting.

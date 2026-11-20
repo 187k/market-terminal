@@ -1,5 +1,7 @@
 import type {
   AssetDetailResponse,
+  CandleInterval,
+  CandlesResponse,
   ConnectionEventDto,
   ExchangeId,
   LiveSignalsResponse,
@@ -10,6 +12,7 @@ import type {
   SessionUser,
   SignalsResponse,
   SystemStatus,
+  TerminalLiveResponse,
   UniverseResponse,
 } from '@mip/core/types';
 
@@ -89,4 +92,13 @@ export const api = {
       body: JSON.stringify(body),
     }),
   asset: (code: string) => request<AssetDetailResponse>(`/api/assets/${encodeURIComponent(code)}`),
+  terminal: (exchange: ExchangeId, symbol: string, interval: CandleInterval) =>
+    request<TerminalLiveResponse>(
+      `/api/terminal/${exchange}/${encodeURIComponent(symbol)}?interval=${interval}`,
+    ),
+  /** Candles opening before `before` (the newest page when omitted), oldest first. */
+  candles: (exchange: ExchangeId, symbol: string, interval: CandleInterval, before?: number) =>
+    request<CandlesResponse>(
+      `/api/terminal/${exchange}/${encodeURIComponent(symbol)}/candles?interval=${interval}${before ? `&before=${before}` : ''}`,
+    ),
 };

@@ -16,7 +16,7 @@ Other documents:
 - The data is normalised into one model.
 - Five analytical scanners run on it: Fair Price, Open Interest, Funding Rate, Cross-Exchange Spread and TWAP/DCA.
 - Each scanner posts to its own Telegram bot and topic.
-- A dark React dashboard shows everything.
+- A dark React dashboard shows everything, including a view-only terminal (chart, order book, trades) per instrument.
 
 Work is done in stages (`prompt.md` §8). Run the tests and verify the result after each stage.
 
@@ -67,7 +67,7 @@ Processes:
 | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `apps/collector` | Connectors, universe, live state and freshness. Publishes to Redis every 1 s. Writes per-minute snapshots and connection events to Postgres. Forwards trades to a Redis Stream.                                             |
 | `apps/engine`    | Market view, then the scanners, then the `SignalEngine` (lifecycle, deduplication, cooldown), then Postgres, Redis and the `TelegramNotifier`. Also makes on-demand order-book calls and runs the Hyperliquid TWAP watcher. |
-| `apps/api`       | Fastify REST API and the single-user cookie session. Reads Redis and Postgres.                                                                                                                                              |
+| `apps/api`       | Fastify REST API and the single-user cookie session. Reads Redis and Postgres. For the view-only terminal it also requests candles and order books from the exchanges' public REST APIs, only while an instrument is open (`terminal.ts`, docs/terminal.md). |
 | `apps/web`       | React + Vite dashboard (nginx in Docker).                                                                                                                                                                                   |
 
 Packages:
@@ -96,7 +96,7 @@ Packages:
    - tests
 2. Add one entry in each map in `registry.ts`.
 3. Add the id to `EXCHANGE_IDS`.
-4. Add an order-book config in `depth/index.ts`.
+4. Add the public REST host and limit in `public-rest.ts`, an order-book request in `depth/index.ts` and a candle request and parser in `klines/index.ts` (fixture via `node tools/record-klines.mjs <ex>`).
 5. Add a default fee in `DEFAULT_TAKER_FEES`.
 
 **Adding a scanner:**

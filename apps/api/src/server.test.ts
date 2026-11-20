@@ -15,6 +15,7 @@ import type { MarketSource } from './markets.js';
 import type { ScannerSource } from './scanners.js';
 import { MemorySessionStore } from './sessions.js';
 import type { StatusSource } from './status.js';
+import type { TerminalSource } from './terminal.js';
 
 const STATUS: SystemStatus = {
   serverTime: 1,
@@ -79,6 +80,14 @@ beforeEach(async () => {
   const assets: AssetSource = {
     asset: async (code) => ({ asset: code }) as never,
   };
+  const terminal: TerminalSource = {
+    live: async (exchange, symbol, interval) => ({ exchange, symbol, interval }) as never,
+    candles: async (exchange, symbol, interval, q) => {
+      if (symbol === 'UNTRACKED') return null;
+      if (symbol === 'BANNED') throw new Error('binance REST requests paused until 2026-11-20T12:00:00.000Z');
+      return { exchange, symbol, interval, candles: [], fetchedAt: q.limit * 1000 + (q.before ?? 0) };
+    },
+  };
   app = await buildServer({
     logger: createLogger({ service: 'test', level: 'silent' }),
     auth: { username: 'admin', password: 'correct horse', ttlSeconds: 3600, cookieSecure: false },
@@ -88,6 +97,7 @@ beforeEach(async () => {
     markets,
     scanners,
     assets,
+    terminal,
   });
 });
 
@@ -163,6 +173,41 @@ describe('API', () => {
     expect(ok.json()).toEqual({ asset: '1000PEPE' });
     const bad = await app.inject({ method: 'GET', url: '/api/assets/a%20b', headers: { cookie } });
     expect(bad.statusCode).toBe(400);
+  });
+
+  it('serves the terminal for valid exchanges, symbols and intervals only', async () => {
+    const cookie = sessionCookie(await login());
+    const get = (url: string) => app.inject({ method: 'GET', url, headers: { cookie } });
+    expect((await get('/api/terminal/bybit/BTCUSDT?interval=1h')).json()).toEqual({
+      exchange: 'bybit',
+      symbol: 'BTCUSDT',
+      interval: '1h',
+    });
+    expect((await get('/api/terminal/gate/BTC_USDT')).json()).toMatchObject({ interval: '5m' });
+    expect((await get('/api/terminal/kraken/BTCUSDT')).statusCode).toBe(400);
+    expect((await get('/api/terminal/bybit/BTC%20USDT')).statusCode).toBe(400);
+    expect((await get('/api/terminal/bybit/BTCUSDT?interval=2m')).statusCode).toBe(400);
+    expect((await app.inject({ method: 'GET', url: '/api/terminal/bybit/BTCUSDT' })).statusCode).toBe(401);
+  });
+
+  it('serves older candles with a clamped page size, 404 for untracked and 502 for exchange errors', async () => {
+    const cookie = sessionCookie(await login());
+    const get = (url: string) => app.inject({ method: 'GET', url, headers: { cookie } });
+    const page = await get('/api/terminal/bybit/BTCUSDT/candles?interval=1d&limit=9999&before=5');
+    expect(page.json()).toEqual({
+      exchange: 'bybit',
+      symbol: 'BTCUSDT',
+      interval: '1d',
+      candles: [],
+      fetchedAt: 300_005,
+    });
+    expect((await get('/api/terminal/bybit/UNTRACKED/candles')).statusCode).toBe(404);
+    const banned = await get('/api/terminal/binance/BANNED/candles');
+    expect(banned.statusCode).toBe(502);
+    expect(banned.json()).toMatchObject({
+      error: 'upstream_error',
+      message: expect.stringMatching(/paused/),
+    });
   });
 
   it('validates scanner settings before saving them', async () => {
@@ -306,8 +351,23 @@ describe('realtime /ws', () => {
     const cookie = sessionCookie(await login());
     const c = await openWs({ cookie, origin: 'http://localhost:5173', host: 'localhost:5173' });
     await c.until(() => c.messages.some((m) => m.type === 'hello'));
-    c.ws.send(JSON.stringify({ type: 'subscribe', topics: ['status', 'markets:kraken', 'asset:BTC'] }));
-    await c.until(() => c.messages.filter((m) => m.type !== 'hello').length >= 3);
+    c.ws.send(
+      JSON.stringify({
+        type: 'subscribe',
+        topics: ['status', 'markets:kraken', 'asset:BTC', 'terminal:bybit:BTCUSDT:1m', 'terminal:bybit:X:2m'],
+      }),
+    );
+    await c.until(() => c.messages.filter((m) => m.type !== 'hello').length >= 5);
+    expect(c.messages).toContainEqual({
+      type: 'data',
+      topic: 'terminal:bybit:BTCUSDT:1m',
+      data: { exchange: 'bybit', symbol: 'BTCUSDT', interval: '1m' },
+    });
+    expect(c.messages).toContainEqual({
+      type: 'error',
+      topic: 'terminal:bybit:X:2m',
+      message: 'Unknown topic: terminal:bybit:X:2m',
+    });
     expect(c.messages).toContainEqual({ type: 'data', topic: 'status', data: STATUS });
     expect(c.messages).toContainEqual({ type: 'data', topic: 'asset:BTC', data: { asset: 'BTC' } });
     expect(c.messages).toContainEqual({

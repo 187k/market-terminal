@@ -15,6 +15,9 @@ packages/db/src/generated/
 .DS_Store
 Thumbs.db
 
+# Server-specific Compose settings (docs/deployment-proxmox.md)
+docker-compose.override.yml
+
 # Local database backups and soak reports
 backups/
 soak/

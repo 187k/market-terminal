@@ -2,7 +2,7 @@
 
 Collects market data from seven crypto exchanges (Bybit, Binance, MEXC, Hyperliquid, Bitget, BingX, Gate), runs five analytical scanners, sends their signals to Telegram and shows everything in a web dashboard. It is an analytical tool only: it never places orders.
 
-**Status: Stages 1–5 complete; Stage 6 (final testing) done on the development PC, the 24 h server soak is pending.** All seven exchanges stream normalised market data for the 100 largest crypto assets. The five scanners (Fair Price, Open Interest, Funding Rate, Cross-Exchange Spread, TWAP / DCA) run in the engine, record signals, and send them to Telegram. The dashboard updates over a WebSocket and has the five working windows with filters, detailed views, signal history, a settings editor per scanner, and a per-coin view.
+**Status: Stages 1–5 complete; Stage 6 (final testing) done on the development PC, the 24 h server soak is pending.** All seven exchanges stream normalised market data for the 100 largest crypto assets. The five scanners (Fair Price, Open Interest, Funding Rate, Cross-Exchange Spread, TWAP / DCA) run in the engine, record signals, and send them to Telegram. The dashboard updates over a WebSocket and has the five working windows with filters, detailed views, signal history, a settings editor per scanner, a per-coin view, and a view-only **terminal** (candlestick chart, order book and trades of one instrument).
 
 Design documents:
 
@@ -10,8 +10,10 @@ Design documents:
 - [docs/stage-3-exchanges.md](docs/stage-3-exchanges.md): connectors as built, field availability per exchange, resolved and open questions.
 - [docs/stage-4-scanners.md](docs/stage-4-scanners.md): **description of each bot**: formulas, settings, messages, limitations, verification.
 - [docs/stage-5-dashboard.md](docs/stage-5-dashboard.md): the dashboard: realtime protocol, windows, filters, detailed views, settings editor, coin details, API.
+- [docs/terminal.md](docs/terminal.md): the view-only terminal: chart, order book, trades, data sources and refresh rates.
 - [docs/stage-6-testing.md](docs/stage-6-testing.md): final testing: what was verified, measured performance, open items.
 - [docs/deployment.md](docs/deployment.md): **production deployment**: HTTPS, backups, restore, updates, retention.
+- [docs/deployment-proxmox.md](docs/deployment-proxmox.md): step by step onto a home Proxmox server (VM, Docker, git remote, LAN or HTTPS access).
 
 ## Requirements
 
@@ -74,12 +76,12 @@ exchanges ──WS/REST──▶ collector ──▶ Redis ◀── engine (fiv
                        PostgreSQL ◀── api (Fastify) ◀──▶ web (React dashboard)
 ```
 
-| Process     | Role                                                  | Current state                                                                                                                                                                         |
-| ----------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `collector` | Exchange connectors, normalisation, connection health | Seven connectors, instrument universe, live state with freshness and validation; publishes market snapshots and health every second                                                   |
-| `engine`    | Scanners and Telegram delivery                        | Five scanners, signal lifecycle (dedupe, cooldown, edits), Telegram, signal history in PostgreSQL                                                                                     |
-| `api`       | REST API and WebSocket for the dashboard, login       | Health, auth, system status, events, market data, universe, scanner status, signals and history, coin details, scanner settings, realtime topics on `/ws`                             |
-| `web`       | Dashboard                                             | Five scanner windows (status, metrics, main signals, latest updates, filters), detailed views with history and settings, coin view, exchange health, event log, sortable market table |
+| Process     | Role                                                  | Current state                                                                                                                                                                                                                                                                                   |
+| ----------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `collector` | Exchange connectors, normalisation, connection health | Seven connectors, instrument universe, live state with freshness and validation; publishes market snapshots and health every second                                                                                                                                                             |
+| `engine`    | Scanners and Telegram delivery                        | Five scanners, signal lifecycle (dedupe, cooldown, edits), Telegram, signal history in PostgreSQL                                                                                                                                                                                               |
+| `api`       | REST API and WebSocket for the dashboard, login       | Health, auth, system status, events, market data, universe, scanner status, signals and history, coin details, scanner settings, terminal data, realtime topics on `/ws`. For the terminal it requests candles and order books from the exchanges' public REST APIs while an instrument is open |
+| `web`       | Dashboard                                             | Five scanner windows (status, metrics, main signals, latest updates, filters), detailed views with history and settings, coin view, exchange health, event log, sortable market table, view-only terminal                                                                                       |
 
 ### Market data flow
 
@@ -151,25 +153,26 @@ A concrete connector is one folder: `parse.ts` maps payloads onto the normalised
 
 All settings come from environment variables (`.env` locally, the container environment in Docker). See [.env.example](.env.example) for the full list. Each process validates its variables at start-up and lists every missing or invalid one without printing their values.
 
-| Variable                                                                                        | Used by                      | Notes                                                                                        |
-| ----------------------------------------------------------------------------------------------- | ---------------------------- | -------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`                                                                                  | collector, api, migrations   | Local default points at the container on port 5433                                           |
-| `REDIS_URL`                                                                                     | all                          |                                                                                              |
-| `LOG_LEVEL`, `LOG_PRETTY`                                                                       | all                          | JSON logs when `LOG_PRETTY=false`                                                            |
-| `EXCHANGES_ENABLED`                                                                             | collector                    | Comma-separated subset of the seven exchanges                                                |
-| `API_HOST`, `API_PORT`                                                                          | api                          | `127.0.0.1` locally; Docker sets `0.0.0.0` inside the container                              |
-| `DASHBOARD_USER`, `DASHBOARD_PASSWORD`                                                          | api                          | Single dashboard login                                                                       |
-| `SESSION_SECRET`, `SESSION_TTL_HOURS`, `COOKIE_SECURE`                                          | api                          | Sessions live in Redis; restarting Redis logs everyone out                                   |
-| `UNIVERSE_SIZE`, `UNIVERSE_RANKING`                                                             | collector                    | Default 100 assets by `market_cap`; `volume` ranks by perp turnover                          |
-| `UNIVERSE_REFRESH_HOURS`, `UNIVERSE_MAX_PRICE_DEVIATION`                                        | collector                    | Default 24 h and 0.15 (15 %)                                                                 |
-| `COINGECKO_API_KEY`, `COINGECKO_API_PLAN`                                                       | collector                    | Optional; without a key the public API is used (~5 calls/min)                                |
-| `<EXCHANGE>_API_KEY` / `_SECRET` (`BITGET_API_PASSPHRASE`)                                      | collector                    | Optional, read-only only. Used for Binance max leverage                                      |
-| `MEXC_REST_URL`, `MEXC_WS_URL`                                                                  | collector (REST also engine) | Leave empty; only for networks that block MEXC's documented hosts                            |
-| `TELEGRAM_CHAT_ID`, `TELEGRAM_<BOT>_BOT_TOKEN` / `_TOPIC_ID`                                    | engine                       | One chat (forum), one topic and bot per scanner; empty = record without sending              |
-| `TRADES_ENABLED`, `TRADES_MIN_NOTIONAL_USD`, `MARKET_SNAPSHOT_RETENTION_DAYS`                   | collector                    | Trade stream for the TWAP detector (default min $500); snapshot history (7 days)             |
-| `CONNECTION_EVENT_RETENTION_DAYS`, `SIGNAL_RETENTION_DAYS`                                      | collector, engine            | Connection events kept 30 days; resolved signals 90 days (minimum 8)                         |
-| `DOMAIN`, `BACKUP_DIR`, `BACKUP_KEEP_DAYS`, `BACKUP_INTERVAL_HOURS`, `BACKUP_INCLUDE_SNAPSHOTS` | production override          | HTTPS host name; database backups ([docs/deployment.md](docs/deployment.md))                 |
-| Scanner thresholds and filters                                                                  | engine                       | Stored in PostgreSQL; edited in the dashboard (Settings) or `PUT /api/scanners/:id/settings` |
+| Variable                                                                                        | Used by                           | Notes                                                                                                                              |
+| ----------------------------------------------------------------------------------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                                                                                  | collector, api, migrations        | Local default points at the container on port 5433                                                                                 |
+| `REDIS_URL`                                                                                     | all                               |                                                                                                                                    |
+| `LOG_LEVEL`, `LOG_PRETTY`                                                                       | all                               | JSON logs when `LOG_PRETTY=false`                                                                                                  |
+| `EXCHANGES_ENABLED`                                                                             | collector                         | Comma-separated subset of the seven exchanges                                                                                      |
+| `API_HOST`, `API_PORT`                                                                          | api                               | `127.0.0.1` locally; Docker sets `0.0.0.0` inside the container                                                                    |
+| `DASHBOARD_USER`, `DASHBOARD_PASSWORD`                                                          | api                               | Single dashboard login                                                                                                             |
+| `SESSION_SECRET`, `SESSION_TTL_HOURS`, `COOKIE_SECURE`                                          | api                               | Sessions live in Redis; restarting Redis logs everyone out                                                                         |
+| `UNIVERSE_SIZE`, `UNIVERSE_RANKING`                                                             | collector                         | Default 100 assets by `market_cap`; `volume` ranks by perp turnover                                                                |
+| `UNIVERSE_REFRESH_HOURS`, `UNIVERSE_MAX_PRICE_DEVIATION`                                        | collector                         | Default 24 h and 0.15 (15 %)                                                                                                       |
+| `COINGECKO_API_KEY`, `COINGECKO_API_PLAN`                                                       | collector                         | Optional; without a key the public API is used (~5 calls/min)                                                                      |
+| `<EXCHANGE>_API_KEY` / `_SECRET` (`BITGET_API_PASSPHRASE`)                                      | collector                         | Optional, read-only only. Used for Binance max leverage                                                                            |
+| `MEXC_REST_URL`, `MEXC_WS_URL`                                                                  | collector (REST also engine, api) | Leave empty; only for networks that block MEXC's documented hosts                                                                  |
+| `TERMINAL_BOOK_REFRESH_MS`, `TERMINAL_CANDLE_SYNC_MS`                                           | api                               | Terminal: order book every 2 s, newest candles every 10 s, only while an instrument is open ([docs/terminal.md](docs/terminal.md)) |
+| `TELEGRAM_CHAT_ID`, `TELEGRAM_<BOT>_BOT_TOKEN` / `_TOPIC_ID`                                    | engine                            | One chat (forum), one topic and bot per scanner; empty = record without sending                                                    |
+| `TRADES_ENABLED`, `TRADES_MIN_NOTIONAL_USD`, `MARKET_SNAPSHOT_RETENTION_DAYS`                   | collector                         | Trade stream for the TWAP detector (default min $500); snapshot history (7 days)                                                   |
+| `CONNECTION_EVENT_RETENTION_DAYS`, `SIGNAL_RETENTION_DAYS`                                      | collector, engine                 | Connection events kept 30 days; resolved signals 90 days (minimum 8)                                                               |
+| `DOMAIN`, `BACKUP_DIR`, `BACKUP_KEEP_DAYS`, `BACKUP_INTERVAL_HOURS`, `BACKUP_INCLUDE_SNAPSHOTS` | production override               | HTTPS host name; database backups ([docs/deployment.md](docs/deployment.md))                                                       |
+| Scanner thresholds and filters                                                                  | engine                            | Stored in PostgreSQL; edited in the dashboard (Settings) or `PUT /api/scanners/:id/settings`                                       |
 
 ## Testing
 
@@ -208,6 +211,7 @@ For each exchange this streams BTC and ETH, checks every field the connector pro
 - **WebSocket first, REST where no stream exists**: open interest on Binance and BingX, BingX index price and funding, MEXC funding interval. REST also bootstraps and re-syncs instruments every 15 min.
 - **Hand-written parsers** on the hot path (about 2,500 updates/s for 100 assets) instead of schema validation per message; values are validated per field in the live state.
 - **Binance top-5 depth every 500 ms** instead of the real-time book ticker, which sent ~1,000 messages/s for just three symbols.
+- **Terminal chart:** [TradingView Lightweight Charts™](https://www.tradingview.com/lightweight-charts/) 5.2 (Apache-2.0). Candle history and order books come from the exchanges' public REST APIs on demand (shared rate limiters and bans); the forming candle follows the WebSocket-fed last price between syncs ([docs/terminal.md](docs/terminal.md)).
 
 ## Troubleshooting
 

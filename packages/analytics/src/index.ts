@@ -4,3 +4,4 @@ export * from './fair-price.js';
 export * from './funding.js';
 export * from './open-interest.js';
 export * from './spread.js';
+export * from './candles.js';

@@ -2,12 +2,16 @@ import cookie from '@fastify/cookie';
 import websocket from '@fastify/websocket';
 import Fastify, { LogController, type FastifyBaseLogger, type FastifyInstance } from 'fastify';
 import {
+  isCandleInterval,
   isExchangeId,
   type AssetDetailResponse,
+  type CandleInterval,
+  type CandlesResponse,
   type ExchangeId,
   type HealthResponse,
   type Logger,
   type SignalsResponse,
+  type TerminalLiveResponse,
   type UniverseResponse,
 } from '@mip/core';
 import { isAssetCode, type AssetSource } from './assets.js';
@@ -17,6 +21,7 @@ import { RealtimeHub, registerRealtime, type TopicResolver } from './realtime.js
 import { isScannerId, type ScannerSource } from './scanners.js';
 import type { SessionStore } from './sessions.js';
 import type { StatusSource } from './status.js';
+import { HISTORY_PAGE, isInstrumentSymbol, type TerminalSource } from './terminal.js';
 
 export interface ServerDeps {
   logger: Logger;
@@ -27,13 +32,20 @@ export interface ServerDeps {
   markets: MarketSource;
   scanners: ScannerSource;
   assets: AssetSource;
+  terminal: TerminalSource;
 }
 
 /** Realtime topics and how often each is re-read (the collector publishes once per second). */
 export function topicResolver(
-  deps: Pick<ServerDeps, 'status' | 'markets' | 'scanners' | 'assets'>,
+  deps: Pick<ServerDeps, 'status' | 'markets' | 'scanners' | 'assets' | 'terminal'>,
 ): TopicResolver {
   return (topic) => {
+    if (topic.startsWith('terminal:')) {
+      const [, exchange, symbol, interval, extra] = topic.split(':');
+      if (extra !== undefined || !exchange || !symbol || !interval) return null;
+      if (!isExchangeId(exchange) || !isInstrumentSymbol(symbol) || !isCandleInterval(interval)) return null;
+      return { load: () => deps.terminal.live(exchange, symbol, interval), intervalMs: 1_000 };
+    }
     if (topic === 'status') return { load: () => deps.status.systemStatus(), intervalMs: 1_000 };
     if (topic === 'scanners') return { load: () => deps.scanners.scanners(), intervalMs: 2_000 };
     if (topic === 'signals') return { load: () => deps.scanners.liveSignals(), intervalMs: 1_000 };
@@ -167,6 +179,46 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
     },
   );
 
+  app.get<{ Params: { exchange: string; symbol: string }; Querystring: { interval?: string } }>(
+    '/api/terminal/:exchange/:symbol',
+    { preHandler: requireAuth },
+    async (request, reply): Promise<TerminalLiveResponse | void> => {
+      const { exchange, symbol } = request.params;
+      const interval = request.query.interval ?? '5m';
+      const problem = terminalParamProblem(exchange, symbol, interval);
+      if (problem) return reply.code(400).send({ error: 'bad_request', message: problem });
+      return deps.terminal.live(exchange as ExchangeId, symbol, interval as CandleInterval);
+    },
+  );
+
+  app.get<{
+    Params: { exchange: string; symbol: string };
+    Querystring: { interval?: string; limit?: string; before?: string };
+  }>(
+    '/api/terminal/:exchange/:symbol/candles',
+    { preHandler: requireAuth },
+    async (request, reply): Promise<CandlesResponse | void> => {
+      const { exchange, symbol } = request.params;
+      const { interval = '5m', limit, before } = request.query;
+      const problem = terminalParamProblem(exchange, symbol, interval);
+      if (problem) return reply.code(400).send({ error: 'bad_request', message: problem });
+      try {
+        const res = await deps.terminal.candles(exchange as ExchangeId, symbol, interval as CandleInterval, {
+          limit: Math.min(Math.max(Number(limit) || HISTORY_PAGE, 1), HISTORY_PAGE),
+          ...(Number(before) > 0 ? { before: Number(before) } : {}),
+        });
+        if (!res)
+          return reply
+            .code(404)
+            .send({ error: 'not_found', message: `${symbol} is not tracked on ${exchange}` });
+        return res;
+      } catch (err) {
+        request.log.warn({ err: (err as Error).message, exchange, symbol }, 'candle request failed');
+        return reply.code(502).send({ error: 'upstream_error', message: (err as Error).message });
+      }
+    },
+  );
+
   app.get<{ Params: { id: string } }>(
     '/api/scanners/:id/settings',
     { preHandler: requireAuth },
@@ -197,4 +249,12 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
   );
 
   return app;
+}
+
+/** Validates terminal route parameters; returns a message for a 400, or null. */
+function terminalParamProblem(exchange: string, symbol: string, interval: string): string | null {
+  if (!isExchangeId(exchange)) return `Unknown exchange: ${exchange}`;
+  if (!isInstrumentSymbol(symbol)) return `Invalid symbol: ${symbol}`;
+  if (!isCandleInterval(interval)) return `Unknown interval: ${interval}`;
+  return null;
 }

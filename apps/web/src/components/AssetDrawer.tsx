@@ -4,6 +4,7 @@ import {
   SCANNERS,
   type AssetDetailResponse,
   type AssetHistorySeries,
+  type ExchangeId,
   type Field,
 } from '@mip/core/types';
 import { api } from '../api';
@@ -93,10 +94,13 @@ export function AssetDrawer({
   asset,
   onClose,
   onUnauthorized,
+  onTerminal,
 }: {
   asset: string;
   onClose: () => void;
   onUnauthorized: () => void;
+  /** Opens the instrument in the terminal. */
+  onTerminal: (exchange: ExchangeId, symbol: string) => void;
 }) {
   const now = useNow();
   const fetchAsset = useCallback(() => api.asset(asset), [asset]);
@@ -143,6 +147,7 @@ export function AssetDrawer({
                 <thead>
                   <tr>
                     <th>Exchange</th>
+                    <th aria-label="Chart" />
                     <th className="num">Last</th>
                     <th className="num">Mark</th>
                     <th className="num" title="Hyperliquid publishes an oracle price instead of an index">
@@ -180,6 +185,16 @@ export function AssetDrawer({
                           {r.instrument && r.instrument.multiplier !== 1 && (
                             <span className="muted small"> ×{r.instrument.multiplier}</span>
                           )}
+                        </td>
+                        <td>
+                          <button
+                            type="button"
+                            className="link small"
+                            onClick={() => onTerminal(r.exchange, r.symbol)}
+                            title={`Open ${r.symbol} on ${EXCHANGE_NAMES[r.exchange]} in the terminal`}
+                          >
+                            Chart
+                          </button>
                         </td>
                         <Cell f={r.fields.last} format={formatPrice} />
                         <Cell f={r.fields.mark} format={formatPrice} />

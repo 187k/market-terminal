@@ -227,18 +227,24 @@ async function summary(samples: Sample[]): Promise<string> {
     '',
     '## Resources',
     '',
-    '| Container | memory start → end (max) MB | CPU avg / max % |',
-    '|---|---|---|',
+    '| Container | memory start → end (max) MB | growth MB/h, 1st half / 2nd half | CPU avg / max % |',
+    '|---|---|---|---|',
   );
+  // Warm-up slows down; a leak keeps its pace. Compare the growth rate of the two halves.
+  const rate = (pts: { t: number; mem: number }[]) =>
+    pts.length < 2 ? NaN : ((pts.at(-1)!.mem - pts[0]!.mem) / (pts.at(-1)!.t - pts[0]!.t)) * 3_600_000;
   const names = [...new Set(samples.flatMap((s) => s.containers.map((c) => c.name)))];
   for (const n of names) {
-    const rows = samples
-      .map((s) => s.containers.find((c) => c.name === n))
-      .filter((c): c is Sample['containers'][number] => !!c);
-    const mem = rows.map((r) => r.memMb);
-    const cpu = rows.map((r) => r.cpu);
+    const pts = samples
+      .map((s) => ({ t: s.t, mem: s.containers.find((c) => c.name === n)?.memMb ?? NaN }))
+      .filter((p) => Number.isFinite(p.mem));
+    const mem = pts.map((p) => p.mem);
+    const cpu = samples
+      .map((s) => s.containers.find((c) => c.name === n)?.cpu)
+      .filter((x): x is number => typeof x === 'number');
+    const half = Math.floor(pts.length / 2);
     out.push(
-      `| ${n} | ${f1(mem[0]!)} → ${f1(mem.at(-1)!)} (${f1(Math.max(...mem))}) | ${f1(cpu.reduce((a, b) => a + b, 0) / cpu.length)} / ${f1(Math.max(...cpu))} |`,
+      `| ${n} | ${f1(mem[0]!)} → ${f1(mem.at(-1)!)} (${f1(Math.max(...mem))}) | ${f1(rate(pts.slice(0, half + 1)))} / ${f1(rate(pts.slice(half)))} | ${f1(cpu.reduce((a, b) => a + b, 0) / cpu.length)} / ${f1(Math.max(...cpu))} |`,
     );
   }
   const redisMb = samples.map((s) => s.redisMb).filter((x): x is number => x !== null);

@@ -7,3 +7,4 @@ export * from './scanners.js';
 export * from './market.js';
 export * from './signals.js';
 export * from './signal-data.js';
+export * from './terminal.js';

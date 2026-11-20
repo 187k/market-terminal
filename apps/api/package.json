@@ -12,7 +12,9 @@
   "dependencies": {
     "@fastify/cookie": "^11.1.5",
     "@fastify/websocket": "^11.3.7",
+    "@mip/analytics": "0.1.0",
     "@mip/bus": "0.1.0",
+    "@mip/connectors": "0.1.0",
     "@mip/core": "0.1.0",
     "@mip/db": "0.1.0",
     "fastify": "^5.12.8",

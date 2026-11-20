@@ -16,6 +16,7 @@ import { NO_FILTERS, type WindowFilters } from '../filters';
 import { formatAge, formatClock } from '../format';
 import { RealtimeContext, useConnectionState, useNow, usePersistentState, useTopic } from '../hooks';
 import { RealtimeConnection } from '../realtime';
+import { navigate, routeHash, useRoute } from '../route';
 import { AssetDrawer } from './AssetDrawer';
 import { Badge } from './Badge';
 import { EventsPanel } from './EventsPanel';
@@ -23,6 +24,7 @@ import { ExchangePanel } from './ExchangePanel';
 import { MarketPanel } from './MarketPanel';
 import { ScannerDrawer, type ScannerTab } from './ScannerDrawer';
 import { ScannerWindow } from './ScannerWindow';
+import { TerminalPage } from './TerminalPage';
 
 const DEFAULT_FILTERS = Object.fromEntries(SCANNER_IDS.map((id) => [id, NO_FILTERS])) as Record<
   ScannerId,
@@ -58,6 +60,7 @@ function Dashboard({ user, onLoggedOut }: { user: SessionUser; onLoggedOut: () =
   const [filters, setFilters] = usePersistentState('mip.filters.v1', DEFAULT_FILTERS);
   const [view, setView] = useState<{ id: ScannerId; tab: ScannerTab } | null>(null);
   const [asset, setAsset] = useState<string | null>(null);
+  const route = useRoute();
 
   const processes = status.data?.processes ?? [];
   const collectorAlive = processes.some((p) => p.name === 'collector' && p.alive);
@@ -98,6 +101,22 @@ function Dashboard({ user, onLoggedOut }: { user: SessionUser; onLoggedOut: () =
           </span>
           Market Intelligence
         </div>
+        <nav className="tabs page-tabs" aria-label="Page">
+          <a
+            href={routeHash({ page: 'dashboard' })}
+            className={`tab ${route.page === 'dashboard' ? 'tab-active' : ''}`}
+            aria-current={route.page === 'dashboard' ? 'page' : undefined}
+          >
+            Dashboard
+          </a>
+          <a
+            href={routeHash({ page: 'terminal' })}
+            className={`tab ${route.page === 'terminal' ? 'tab-active' : ''}`}
+            aria-current={route.page === 'terminal' ? 'page' : undefined}
+          >
+            Terminal
+          </a>
+        </nav>
         <div className="procs" aria-label="Process status">
           {processes.map((p) => (
             <Badge
@@ -127,38 +146,55 @@ function Dashboard({ user, onLoggedOut }: { user: SessionUser; onLoggedOut: () =
         </div>
       </header>
 
-      <main className="layout">
-        <div className="scanners">
-          {SCANNERS.map((s) => (
-            <ScannerWindow
-              key={s.id}
-              scanner={s}
-              status={scanners.data?.scanners.find((x) => x.id === s.id)}
-              active={byScanner[s.id].active}
-              recent={byScanner[s.id].recent}
-              engineAlive={engineAlive}
-              filters={filters[s.id] ?? NO_FILTERS}
-              onFilters={setScannerFilters(s.id)}
-              onOpen={(tab) => setView({ id: s.id, tab })}
-              onAsset={openAsset}
+      {route.page === 'terminal' ? (
+        <TerminalPage route={route} onUnauthorized={onLoggedOut} onAsset={openAsset} />
+      ) : (
+        <main className="layout">
+          <div className="scanners">
+            {SCANNERS.map((s) => (
+              <ScannerWindow
+                key={s.id}
+                scanner={s}
+                status={scanners.data?.scanners.find((x) => x.id === s.id)}
+                active={byScanner[s.id].active}
+                recent={byScanner[s.id].recent}
+                engineAlive={engineAlive}
+                filters={filters[s.id] ?? NO_FILTERS}
+                onFilters={setScannerFilters(s.id)}
+                onOpen={(tab) => setView({ id: s.id, tab })}
+                onAsset={openAsset}
+              />
+            ))}
+          </div>
+          <aside className="side">
+            <ExchangePanel
+              exchanges={status.data?.exchanges ?? []}
+              updatedAt={status.data?.exchangesUpdatedAt ?? null}
+              collectorAlive={status.data ? collectorAlive : null}
             />
-          ))}
-        </div>
-        <aside className="side">
-          <ExchangePanel
-            exchanges={status.data?.exchanges ?? []}
-            updatedAt={status.data?.exchangesUpdatedAt ?? null}
-            collectorAlive={status.data ? collectorAlive : null}
-          />
-          <EventsPanel events={events.data} error={events.error} />
-        </aside>
-        <div className="span-all">
-          <MarketPanel exchanges={streaming} onUnauthorized={onLoggedOut} onAsset={openAsset} />
-        </div>
-      </main>
+            <EventsPanel events={events.data} error={events.error} />
+          </aside>
+          <div className="span-all">
+            <MarketPanel exchanges={streaming} onUnauthorized={onLoggedOut} onAsset={openAsset} />
+          </div>
+        </main>
+      )}
 
       {asset ? (
-        <AssetDrawer asset={asset} onClose={() => setAsset(null)} onUnauthorized={onLoggedOut} />
+        <AssetDrawer
+          asset={asset}
+          onClose={() => setAsset(null)}
+          onUnauthorized={onLoggedOut}
+          onTerminal={(exchange, symbol) => {
+            setAsset(null);
+            navigate({
+              page: 'terminal',
+              exchange,
+              symbol,
+              ...(route.page === 'terminal' && route.interval ? { interval: route.interval } : {}),
+            });
+          }}
+        />
       ) : view && viewed ? (
         <ScannerDrawer
           scanner={viewed}

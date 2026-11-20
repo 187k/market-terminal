@@ -153,6 +153,14 @@ export const apiEnvSchema = baseEnvSchema.extend({
   SESSION_SECRET: z.string().min(16, 'must be at least 16 characters'),
   SESSION_TTL_HOURS: z.coerce.number().positive().default(168),
   COOKIE_SECURE: booleanString.default(false),
+  /** Same override as the collector's: the terminal fetches MEXC candles and order books. */
+  MEXC_REST_URL: z.url().optional(),
+  /** The collector's trade filter, shown next to the terminal's trade list (same `.env`). */
+  TRADES_MIN_NOTIONAL_USD: z.coerce.number().min(0).default(500),
+  /** How often the terminal re-requests the viewed order book from the exchange (REST). */
+  TERMINAL_BOOK_REFRESH_MS: z.coerce.number().int().min(1_000).max(60_000).default(2_000),
+  /** How often the terminal re-syncs the newest candles from the exchange (REST). */
+  TERMINAL_CANDLE_SYNC_MS: z.coerce.number().int().min(2_000).max(300_000).default(10_000),
 });
 
 /** Example values from `.env.example` that must not survive into production. */

@@ -131,10 +131,17 @@ export interface AssetDetailResponse {
  * Realtime topics on `/ws`. Each delivers the same payload as its REST endpoint:
  * status → SystemStatus, scanners → ScannersResponse, signals → LiveSignalsResponse,
  * events → ConnectionEventDto[], markets:<exchange> → MarketsResponse,
- * asset:<code> → AssetDetailResponse.
+ * asset:<code> → AssetDetailResponse,
+ * terminal:<exchange>:<symbol>:<interval> → TerminalLiveResponse.
  */
 export type RealtimeTopic =
-  'status' | 'scanners' | 'signals' | 'events' | `markets:${ExchangeId}` | `asset:${string}`;
+  | 'status'
+  | 'scanners'
+  | 'signals'
+  | 'events'
+  | `markets:${ExchangeId}`
+  | `asset:${string}`
+  | `terminal:${ExchangeId}:${string}:${string}`;
 
 export type RealtimeClientMessage =
   { type: 'subscribe'; topics: string[] } | { type: 'unsubscribe'; topics: string[] };

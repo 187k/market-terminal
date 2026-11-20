@@ -11,6 +11,7 @@ import {
 import { api } from '../api';
 import { formatClock, formatCompact, formatCountdown, formatPrice, formatRate, formatWhen } from '../format';
 import { useNow, usePersistentState, usePolling, useTopic } from '../hooks';
+import { routeHash } from '../route';
 
 interface Column {
   field: MarketField;
@@ -241,6 +242,14 @@ export function MarketPanel({
                           ⓘ
                         </button>
                       )}
+                      <a
+                        className="asset-btn"
+                        href={routeHash({ page: 'terminal', exchange: exchange!, symbol: r.symbol })}
+                        title={`Open ${r.symbol} in the terminal`}
+                        aria-label={`Chart of ${r.symbol}`}
+                      >
+                        <ChartIcon />
+                      </a>
                       {r.instrument ? (
                         <a
                           href={r.instrument.url}
@@ -271,5 +280,17 @@ export function MarketPanel({
         </>
       )}
     </section>
+  );
+}
+
+/** Small candlestick glyph for "open in terminal" links. */
+function ChartIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden fill="currentColor">
+      <rect x="1.5" y="3" width="2" height="5" />
+      <rect x="2.25" y="1" width="0.5" height="9" />
+      <rect x="7" y="5" width="2" height="4" />
+      <rect x="7.75" y="3" width="0.5" height="8" />
+    </svg>
   );
 }
