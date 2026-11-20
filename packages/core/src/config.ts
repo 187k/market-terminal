@@ -90,6 +90,12 @@ export const collectorEnvSchema = baseEnvSchema.extend({
   UNIVERSE_MAX_PRICE_DEVIATION: z.coerce.number().positive().max(1).default(0.15),
   COINGECKO_API_KEY: optionalSecret,
   COINGECKO_API_PLAN: z.enum(['demo', 'pro']).default('demo'),
+  /**
+   * Seconds between CoinGecko polls for the home page (coin figures with 7-day charts, and
+   * global market stats). Each poll costs 2 calls (one more per 250 universe coins beyond the
+   * first 250) out of the budget the universe build also uses.
+   */
+  OVERVIEW_REFRESH_SEC: z.coerce.number().int().min(60).max(3600).default(120),
   // Read-only exchange keys (optional). Used only where an endpoint requires a key.
   BYBIT_API_KEY: optionalSecret,
   BYBIT_API_SECRET: optionalSecret,

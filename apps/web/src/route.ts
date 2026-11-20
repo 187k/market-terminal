@@ -2,18 +2,21 @@ import { useEffect, useState } from 'react';
 import { isCandleInterval, isExchangeId, type CandleInterval, type ExchangeId } from '@mip/core/types';
 
 /**
- * The dashboard's two pages live in the URL hash, so links can be shared and the browser's
+ * The dashboard's pages live in the URL hash, so links can be shared and the browser's
  * back button works without a router or server-side routes:
- *   #/                                  dashboard
+ *   #/                                          home (market overview)
+ *   #/dashboard                                 scanner dashboard
  *   #/terminal/<exchange>/<symbol>/<interval>   terminal (each part optional)
  */
 export type Route =
+  | { page: 'home' }
   | { page: 'dashboard' }
   | { page: 'terminal'; exchange?: ExchangeId; symbol?: string; interval?: CandleInterval };
 
 export function parseRoute(hash: string): Route {
   const parts = hash.replace(/^#\/?/, '').split('/').map(decodeURIComponent);
-  if (parts[0] !== 'terminal') return { page: 'dashboard' };
+  if (parts[0] === 'dashboard') return { page: 'dashboard' };
+  if (parts[0] !== 'terminal') return { page: 'home' };
   const [, exchange, symbol, interval] = parts;
   return {
     page: 'terminal',
@@ -24,7 +27,8 @@ export function parseRoute(hash: string): Route {
 }
 
 export function routeHash(route: Route): string {
-  if (route.page === 'dashboard') return '#/';
+  if (route.page === 'home') return '#/';
+  if (route.page === 'dashboard') return '#/dashboard';
   const parts = ['terminal', route.exchange, route.symbol, route.interval].filter(
     (p): p is string => p !== undefined,
   );

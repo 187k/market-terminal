@@ -8,7 +8,7 @@ import { Badge, type Tone } from './Badge';
 import { FilterBar } from './FilterBar';
 import type { ScannerTab } from './ScannerDrawer';
 
-function scannerState(
+export function scannerState(
   status: ScannerStatusDto | undefined,
   engineAlive: boolean | null,
   now: number,
@@ -34,14 +34,14 @@ const TELEGRAM_TONE: Record<string, Tone> = { ok: 'pos', disabled: 'muted', erro
 /** Most significant first: the largest absolute figure (net spread and executed volume are signed / positive). */
 const significance = (s: SignalDto) => (s.scanner === 'spread' ? s.value : Math.abs(s.value));
 
-interface Update {
+export interface Update {
   ts: number;
   kind: 'opened' | 'updated' | 'resolved';
   signal: SignalDto;
 }
 
 /** Latest lifecycle events: new and changed open signals, and resolutions. */
-function latestUpdates(active: SignalDto[], recent: SignalDto[], limit: number): Update[] {
+export function latestUpdates(active: SignalDto[], recent: SignalDto[], limit: number): Update[] {
   const out: Update[] = [];
   for (const s of active)
     out.push(

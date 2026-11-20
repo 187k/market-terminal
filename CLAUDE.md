@@ -65,7 +65,7 @@ Processes:
 
 | Process          | Responsibility                                                                                                                                                                                                              |
 | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `apps/collector` | Connectors, universe, live state and freshness. Publishes to Redis every 1 s. Writes per-minute snapshots and connection events to Postgres. Forwards trades to a Redis Stream.                                             |
+| `apps/collector` | Connectors, universe, live state and freshness. Publishes to Redis every 1 s. Writes per-minute snapshots and connection events to Postgres. Forwards trades to a Redis Stream. Polls CoinGecko for the home page (docs/home.md). |
 | `apps/engine`    | Market view, then the scanners, then the `SignalEngine` (lifecycle, deduplication, cooldown), then Postgres, Redis and the `TelegramNotifier`. Also makes on-demand order-book calls and runs the Hyperliquid TWAP watcher. |
 | `apps/api`       | Fastify REST API and the single-user cookie session. Reads Redis and Postgres. For the view-only terminal it also requests candles and order books from the exchanges' public REST APIs, only while an instrument is open (`terminal.ts`, docs/terminal.md). |
 | `apps/web`       | React + Vite dashboard (nginx in Docker).                                                                                                                                                                                   |

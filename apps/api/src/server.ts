@@ -17,6 +17,7 @@ import {
 import { isAssetCode, type AssetSource } from './assets.js';
 import { registerAuth, requireAuth, type AuthConfig } from './auth.js';
 import type { MarketSource } from './markets.js';
+import type { OverviewSource } from './overview.js';
 import { RealtimeHub, registerRealtime, type TopicResolver } from './realtime.js';
 import { isScannerId, type ScannerSource } from './scanners.js';
 import type { SessionStore } from './sessions.js';
@@ -33,11 +34,12 @@ export interface ServerDeps {
   scanners: ScannerSource;
   assets: AssetSource;
   terminal: TerminalSource;
+  overview: OverviewSource;
 }
 
 /** Realtime topics and how often each is re-read (the collector publishes once per second). */
 export function topicResolver(
-  deps: Pick<ServerDeps, 'status' | 'markets' | 'scanners' | 'assets' | 'terminal'>,
+  deps: Pick<ServerDeps, 'status' | 'markets' | 'scanners' | 'assets' | 'terminal' | 'overview'>,
 ): TopicResolver {
   return (topic) => {
     if (topic.startsWith('terminal:')) {
@@ -50,6 +52,10 @@ export function topicResolver(
     if (topic === 'scanners') return { load: () => deps.scanners.scanners(), intervalMs: 2_000 };
     if (topic === 'signals') return { load: () => deps.scanners.liveSignals(), intervalMs: 1_000 };
     if (topic === 'events') return { load: () => deps.status.connectionEvents(30), intervalMs: 5_000 };
+    // CoinGecko figures change once per collector poll (minutes); unchanged payloads are not re-sent.
+    if (topic === 'overview') return { load: () => deps.overview.overview(), intervalMs: 5_000 };
+    // Funding and open interest move slowly; every 5 s is plenty for the home page.
+    if (topic === 'perps') return { load: () => deps.overview.perps(), intervalMs: 5_000 };
     const [kind, arg] = topic.split(':', 2) as [string, string | undefined];
     if (kind === 'markets' && arg && isExchangeId(arg))
       return { load: () => deps.markets.markets(arg), intervalMs: 1_000 };
@@ -133,6 +139,10 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
   app.get('/api/universe', { preHandler: requireAuth }, async (): Promise<UniverseResponse> => ({
     universe: await deps.markets.universe(),
   }));
+
+  app.get('/api/overview', { preHandler: requireAuth }, async () => deps.overview.overview());
+
+  app.get('/api/overview/perps', { preHandler: requireAuth }, async () => deps.overview.perps());
 
   app.get('/api/scanners', { preHandler: requireAuth }, async () => deps.scanners.scanners());
 

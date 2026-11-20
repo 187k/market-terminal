@@ -1,6 +1,12 @@
-import type { Logger } from '@mip/core';
+import type { CoinSpotStats, GlobalMarketStats, Logger } from '@mip/core';
 import { RateLimiter } from '../base/rate-limiter.js';
 import { RestClient } from '../base/rest-client.js';
+import { parseCoinMarkets, parseGlobal } from './parse.js';
+
+export { parseCoinMarkets, parseCoinSpot, parseGlobal } from './parse.js';
+
+/** `/coins/markets` returns at most 250 rows per page. */
+const MAX_PER_PAGE = 250;
 
 /** The subset of `/coins/markets` rows the platform uses. */
 export interface CoinMarket {
@@ -100,6 +106,39 @@ export class CoinGeckoClient {
     const ids = new Set<string>();
     for (const c of categories) for (const coin of await this.marketsPage(1, c)) ids.add(coin.id);
     return [...ids];
+  }
+
+  /**
+   * Spot figures for the given coins, with the 7-day sparkline and 1 h / 24 h / 7 d changes.
+   * Home page data: low priority (universe builds go first) and no retries (the next poll is
+   * the retry), so it never holds up the shared CoinGecko budget.
+   */
+  async coinsByIds(ids: readonly string[]): Promise<CoinSpotStats[]> {
+    const out: CoinSpotStats[] = [];
+    for (let i = 0; i < ids.length; i += MAX_PER_PAGE) {
+      const chunk = ids.slice(i, i + MAX_PER_PAGE);
+      const rows = await this.#rest.get<unknown>(
+        '/api/v3/coins/markets',
+        {
+          vs_currency: 'usd',
+          ids: chunk.join(','),
+          order: 'market_cap_desc',
+          per_page: MAX_PER_PAGE,
+          page: 1,
+          sparkline: true,
+          price_change_percentage: '1h,24h,7d',
+        },
+        { priority: 'low', retry: false },
+      );
+      out.push(...parseCoinMarkets(rows));
+    }
+    return out;
+  }
+
+  /** Whole-market figures (`/global`); same priority and retry rules as `coinsByIds`. */
+  async global(): Promise<GlobalMarketStats> {
+    const raw = await this.#rest.get<unknown>('/api/v3/global', undefined, { priority: 'low', retry: false });
+    return parseGlobal(raw);
   }
 
   health() {

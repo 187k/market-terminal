@@ -12,6 +12,7 @@ import type { AssetSource } from './assets.js';
 import { LoginThrottle, SESSION_COOKIE } from './auth.js';
 import { buildServer } from './server.js';
 import type { MarketSource } from './markets.js';
+import type { OverviewSource } from './overview.js';
 import type { ScannerSource } from './scanners.js';
 import { MemorySessionStore } from './sessions.js';
 import type { StatusSource } from './status.js';
@@ -88,6 +89,10 @@ beforeEach(async () => {
       return { exchange, symbol, interval, candles: [], fetchedAt: q.limit * 1000 + (q.before ?? 0) };
     },
   };
+  const overview: OverviewSource = {
+    overview: async () => ({ source: 'coingecko', coins: [], notes: ['stub'] }) as never,
+    perps: async () => ({ assets: [], staleExchanges: ['gate'] }) as never,
+  };
   app = await buildServer({
     logger: createLogger({ service: 'test', level: 'silent' }),
     auth: { username: 'admin', password: 'correct horse', ttlSeconds: 3600, cookieSecure: false },
@@ -98,6 +103,7 @@ beforeEach(async () => {
     scanners,
     assets,
     terminal,
+    overview,
   });
 });
 
@@ -129,6 +135,17 @@ describe('API', () => {
     const res = await app.inject({ method: 'GET', url: '/api/health' });
     expect(res.statusCode).toBe(503);
     expect(res.json()).toMatchObject({ status: 'degraded', db: false });
+  });
+
+  it('serves the home page overview and perps summary to a logged-in user only', async () => {
+    expect((await app.inject({ method: 'GET', url: '/api/overview' })).statusCode).toBe(401);
+    expect((await app.inject({ method: 'GET', url: '/api/overview/perps' })).statusCode).toBe(401);
+    const cookie = sessionCookie(await login());
+    const overview = await app.inject({ method: 'GET', url: '/api/overview', headers: { cookie } });
+    expect(overview.statusCode).toBe(200);
+    expect(overview.json()).toEqual({ source: 'coingecko', coins: [], notes: ['stub'] });
+    const perps = await app.inject({ method: 'GET', url: '/api/overview/perps', headers: { cookie } });
+    expect(perps.json()).toEqual({ assets: [], staleExchanges: ['gate'] });
   });
 
   it('serves market data per exchange and rejects unknown exchanges', async () => {
@@ -354,10 +371,28 @@ describe('realtime /ws', () => {
     c.ws.send(
       JSON.stringify({
         type: 'subscribe',
-        topics: ['status', 'markets:kraken', 'asset:BTC', 'terminal:bybit:BTCUSDT:1m', 'terminal:bybit:X:2m'],
+        topics: [
+          'status',
+          'markets:kraken',
+          'asset:BTC',
+          'terminal:bybit:BTCUSDT:1m',
+          'terminal:bybit:X:2m',
+          'overview',
+          'perps',
+        ],
       }),
     );
-    await c.until(() => c.messages.filter((m) => m.type !== 'hello').length >= 5);
+    await c.until(() => c.messages.filter((m) => m.type !== 'hello').length >= 7);
+    expect(c.messages).toContainEqual({
+      type: 'data',
+      topic: 'overview',
+      data: { source: 'coingecko', coins: [], notes: ['stub'] },
+    });
+    expect(c.messages).toContainEqual({
+      type: 'data',
+      topic: 'perps',
+      data: { assets: [], staleExchanges: ['gate'] },
+    });
     expect(c.messages).toContainEqual({
       type: 'data',
       topic: 'terminal:bybit:BTCUSDT:1m',

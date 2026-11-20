@@ -132,13 +132,16 @@ export interface AssetDetailResponse {
  * status → SystemStatus, scanners → ScannersResponse, signals → LiveSignalsResponse,
  * events → ConnectionEventDto[], markets:<exchange> → MarketsResponse,
  * asset:<code> → AssetDetailResponse,
- * terminal:<exchange>:<symbol>:<interval> → TerminalLiveResponse.
+ * terminal:<exchange>:<symbol>:<interval> → TerminalLiveResponse,
+ * overview → MarketOverviewResponse, perps → PerpOverviewResponse.
  */
 export type RealtimeTopic =
   | 'status'
   | 'scanners'
   | 'signals'
   | 'events'
+  | 'overview'
+  | 'perps'
   | `markets:${ExchangeId}`
   | `asset:${string}`
   | `terminal:${ExchangeId}:${string}:${string}`;

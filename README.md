@@ -2,7 +2,7 @@
 
 Collects market data from seven crypto exchanges (Bybit, Binance, MEXC, Hyperliquid, Bitget, BingX, Gate), runs five analytical scanners, sends their signals to Telegram and shows everything in a web dashboard. It is an analytical tool only: it never places orders.
 
-**Status: Stages 1–5 complete; Stage 6 (final testing) done on the development PC, the 24 h server soak is pending.** All seven exchanges stream normalised market data for the 100 largest crypto assets. The five scanners (Fair Price, Open Interest, Funding Rate, Cross-Exchange Spread, TWAP / DCA) run in the engine, record signals, and send them to Telegram. The dashboard updates over a WebSocket and has the five working windows with filters, detailed views, signal history, a settings editor per scanner, a per-coin view, and a view-only **terminal** (candlestick chart, order book and trades of one instrument).
+**Status: Stages 1–5 complete; Stage 6 (final testing) done on the development PC, the 24 h server soak is pending.** All seven exchanges stream normalised market data for the 100 largest crypto assets. The five scanners (Fair Price, Open Interest, Funding Rate, Cross-Exchange Spread, TWAP / DCA) run in the engine, record signals, and send them to Telegram. The dashboard updates over a WebSocket. It opens on a **home page** with a market overview (whole-market figures, cards for the 20 largest coins with 7-day charts, perpetual funding and open interest per coin, top movers, a market map, signal and exchange health). It also has the five working windows with filters, detailed views, signal history, a settings editor per scanner, a per-coin view, and a view-only **terminal** (candlestick chart, order book and trades of one instrument).
 
 Design documents:
 
@@ -10,6 +10,7 @@ Design documents:
 - [docs/stage-3-exchanges.md](docs/stage-3-exchanges.md): connectors as built, field availability per exchange, resolved and open questions.
 - [docs/stage-4-scanners.md](docs/stage-4-scanners.md): **description of each bot**: formulas, settings, messages, limitations, verification.
 - [docs/stage-5-dashboard.md](docs/stage-5-dashboard.md): the dashboard: realtime protocol, windows, filters, detailed views, settings editor, coin details, API.
+- [docs/home.md](docs/home.md): the home page: market overview, data sources (CoinGecko and the exchanges), formulas, refresh rates.
 - [docs/terminal.md](docs/terminal.md): the view-only terminal: chart, order book, trades, data sources and refresh rates.
 - [docs/stage-6-testing.md](docs/stage-6-testing.md): final testing: what was verified, measured performance, open items.
 - [docs/deployment.md](docs/deployment.md): **production deployment**: HTTPS, backups, restore, updates, retention.
@@ -76,12 +77,12 @@ exchanges ──WS/REST──▶ collector ──▶ Redis ◀── engine (fiv
                        PostgreSQL ◀── api (Fastify) ◀──▶ web (React dashboard)
 ```
 
-| Process     | Role                                                  | Current state                                                                                                                                                                                                                                                                                   |
-| ----------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `collector` | Exchange connectors, normalisation, connection health | Seven connectors, instrument universe, live state with freshness and validation; publishes market snapshots and health every second                                                                                                                                                             |
-| `engine`    | Scanners and Telegram delivery                        | Five scanners, signal lifecycle (dedupe, cooldown, edits), Telegram, signal history in PostgreSQL                                                                                                                                                                                               |
-| `api`       | REST API and WebSocket for the dashboard, login       | Health, auth, system status, events, market data, universe, scanner status, signals and history, coin details, scanner settings, terminal data, realtime topics on `/ws`. For the terminal it requests candles and order books from the exchanges' public REST APIs while an instrument is open |
-| `web`       | Dashboard                                             | Five scanner windows (status, metrics, main signals, latest updates, filters), detailed views with history and settings, coin view, exchange health, event log, sortable market table, view-only terminal                                                                                       |
+| Process     | Role                                                  | Current state                                                                                                                                                                                                                                                                                                                             |
+| ----------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `collector` | Exchange connectors, normalisation, connection health | Seven connectors, instrument universe, live state with freshness and validation; publishes market snapshots and health every second; polls CoinGecko for the home page every 2 min                                                                                                                                                        |
+| `engine`    | Scanners and Telegram delivery                        | Five scanners, signal lifecycle (dedupe, cooldown, edits), Telegram, signal history in PostgreSQL                                                                                                                                                                                                                                         |
+| `api`       | REST API and WebSocket for the dashboard, login       | Health, auth, system status, events, market data, universe, home page overview and perpetual summary, scanner status, signals and history, coin details, scanner settings, terminal data, realtime topics on `/ws`. For the terminal it requests candles and order books from the exchanges' public REST APIs while an instrument is open |
+| `web`       | Dashboard                                             | Home page (market overview), five scanner windows (status, metrics, main signals, latest updates, filters), detailed views with history and settings, coin view, exchange health, event log, sortable market table, view-only terminal                                                                                                    |
 
 ### Market data flow
 
@@ -92,6 +93,7 @@ connector (per exchange)                 collector                              
   REST polls (OI, BingX index) ───┘      (12 fields)        validate, drop        mip:health:exchanges
                                                             out-of-order,         mip:universe, mip:instruments
 CoinGecko ─▶ universe (top N, price-checked mapping) ─▶ tracked symbols per exchange
+CoinGecko ─▶ home page poll (coin figures, 7-day charts, /global) ─2 min─▶ mip:overview
 ```
 
 1. On start each connector loads its tradable crypto USDT perpetuals and a REST snapshot.
@@ -165,6 +167,7 @@ All settings come from environment variables (`.env` locally, the container envi
 | `UNIVERSE_SIZE`, `UNIVERSE_RANKING`                                                             | collector                         | Default 100 assets by `market_cap`; `volume` ranks by perp turnover                                                                |
 | `UNIVERSE_REFRESH_HOURS`, `UNIVERSE_MAX_PRICE_DEVIATION`                                        | collector                         | Default 24 h and 0.15 (15 %)                                                                                                       |
 | `COINGECKO_API_KEY`, `COINGECKO_API_PLAN`                                                       | collector                         | Optional; without a key the public API is used (~5 calls/min)                                                                      |
+| `OVERVIEW_REFRESH_SEC`                                                                          | collector                         | Home page: CoinGecko poll every 120 s, 2 calls each ([docs/home.md](docs/home.md))                                                 |
 | `<EXCHANGE>_API_KEY` / `_SECRET` (`BITGET_API_PASSPHRASE`)                                      | collector                         | Optional, read-only only. Used for Binance max leverage                                                                            |
 | `MEXC_REST_URL`, `MEXC_WS_URL`                                                                  | collector (REST also engine, api) | Leave empty; only for networks that block MEXC's documented hosts                                                                  |
 | `TERMINAL_BOOK_REFRESH_MS`, `TERMINAL_CANDLE_SYNC_MS`                                           | api                               | Terminal: order book every 2 s, newest candles every 10 s, only while an instrument is open ([docs/terminal.md](docs/terminal.md)) |
@@ -190,6 +193,7 @@ All settings come from environment variables (`.env` locally, the container envi
 - Dashboard backend: the realtime hub, `/ws` authentication and Origin checks, coin details, settings merge and JSON Schema.
 - Every scanner formula, the signal lifecycle (confirmation, edits, resolve, cooldown, restart without duplicates), the Telegram notifier against a fake Bot API, each scanner on synthetic and recorded real data, order-book and trade parsing for all seven exchanges. Details in [docs/stage-4-scanners.md](docs/stage-4-scanners.md).
 - Universe selection: ranking, exclusions, multiplier mapping, ticker collisions, stale reference prices, volume fallback.
+- Home page: CoinGecko parsing on recorded payloads, the overview poller (failures keep old data with its time), the per-coin perpetual summary (premium, 24 h funding, open interest and its 24 h change), staleness and notes, the market-map layout.
 
 **Live tests** (opt-in, real exchanges, public endpoints only):
 
@@ -212,6 +216,7 @@ For each exchange this streams BTC and ETH, checks every field the connector pro
 - **Hand-written parsers** on the hot path (about 2,500 updates/s for 100 assets) instead of schema validation per message; values are validated per field in the live state.
 - **Binance top-5 depth every 500 ms** instead of the real-time book ticker, which sent ~1,000 messages/s for just three symbols.
 - **Terminal chart:** [TradingView Lightweight Charts™](https://www.tradingview.com/lightweight-charts/) 5.2 (Apache-2.0). Candle history and order books come from the exchanges' public REST APIs on demand (shared rate limiters and bans); the forming candle follows the WebSocket-fed last price between syncs ([docs/terminal.md](docs/terminal.md)).
+- **Home page:** spot figures come from CoinGecko, polled by the collector through the same rate-limited client as the universe (low priority, no retries), so one process owns the CoinGecko budget. Perpetual figures are computed by the API from the live snapshots; spot and perpetual prices are never compared with each other ([docs/home.md](docs/home.md)).
 
 ## Troubleshooting
 

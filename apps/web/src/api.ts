@@ -5,7 +5,9 @@ import type {
   ConnectionEventDto,
   ExchangeId,
   LiveSignalsResponse,
+  MarketOverviewResponse,
   MarketsResponse,
+  PerpOverviewResponse,
   ScannerId,
   ScannerSettingsDto,
   ScannersResponse,
@@ -65,6 +67,8 @@ export const api = {
   events: () => request<ConnectionEventDto[]>('/api/system/events?limit=30'),
   markets: (exchange: ExchangeId) => request<MarketsResponse>(`/api/markets/${exchange}`),
   universe: () => request<UniverseResponse>('/api/universe'),
+  overview: () => request<MarketOverviewResponse>('/api/overview'),
+  perps: () => request<PerpOverviewResponse>('/api/overview/perps'),
   scanners: () => request<ScannersResponse>('/api/scanners'),
   liveSignals: () => request<LiveSignalsResponse>('/api/signals/live'),
   /** Resolved signals from PostgreSQL, newest first; `before` = firstSeenAt cursor of the last row. */

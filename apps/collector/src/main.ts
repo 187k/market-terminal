@@ -6,6 +6,7 @@ import {
   startHeartbeat,
   writeExchangeHealth,
   writeInstruments,
+  writeMarketOverview,
   writeMarketSnapshots,
   writeRestPause,
   writeUniverse,
@@ -35,6 +36,7 @@ import {
 import { createPrismaClient } from '@mip/db';
 import { ConnectionEventWriter } from './event-writer.js';
 import { MarketState } from './market-state.js';
+import { MarketOverviewPoller } from './overview.js';
 import { symbolsFor } from './universe/select.js';
 import { SnapshotWriter } from './snapshots.js';
 import { TradeForwarder } from './trades.js';
@@ -82,6 +84,13 @@ async function main(): Promise<void> {
     ...(env.COINGECKO_API_KEY ? { apiKey: env.COINGECKO_API_KEY } : {}),
     plan: env.COINGECKO_API_PLAN,
   });
+  // Home page figures share the CoinGecko client, so they share its rate limiter with the universe.
+  const overview = new MarketOverviewPoller({
+    source: coingecko,
+    write: (value) => writeMarketOverview(redis, value),
+    logger,
+    refreshMs: env.OVERVIEW_REFRESH_SEC * 1_000,
+  });
 
   const startable = env.EXCHANGES_ENABLED.filter((e) => CONNECTOR_FACTORIES[e]);
   for (const ex of startable) state.register(ex, CONNECTOR_CAPABILITIES[ex]!);
@@ -115,6 +124,7 @@ async function main(): Promise<void> {
       void publishUniverse(u, instruments).catch((err: Error) =>
         logger.warn({ err: err.message }, 'publishing universe failed'),
       );
+      overview.setUniverse(u);
       // Started from an outdated stored ranking: refresh from CoinGecko in the background.
       if (universe.needsRefresh && !refreshScheduled) {
         refreshScheduled = true;
@@ -232,6 +242,7 @@ async function main(): Promise<void> {
   snapshots.start();
 
   handleShutdown(logger, async () => {
+    overview.stop();
     snapshots.stop();
     await trades?.stop();
     clearInterval(publishTimer);
@@ -263,6 +274,7 @@ async function main(): Promise<void> {
     );
   }
   await publish();
+  overview.start();
   await supervisor.start();
   logger.info('collector running');
 }

@@ -12,6 +12,7 @@ import {
 import { createPrismaClient } from '@mip/db';
 import { createAssetSource } from './assets.js';
 import { createMarketSource } from './markets.js';
+import { createOverviewSource } from './overview.js';
 import { createScannerSource } from './scanners.js';
 import { buildServer } from './server.js';
 import { RedisSessionStore } from './sessions.js';
@@ -66,6 +67,7 @@ async function main(): Promise<void> {
     markets: createMarketSource(redis),
     scanners,
     assets: createAssetSource(redis, prisma, scanners),
+    overview: createOverviewSource(redis, prisma),
     terminal: createTerminalSource({
       ...redisTerminalReaders(redis),
       klines,

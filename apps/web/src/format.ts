@@ -119,3 +119,13 @@ export function formatSmallPct(v: number): string {
 export function formatFixed(v: number, decimals: number): string {
   return v.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
+
+/** A USD price: "$58,324", "$0.3015". */
+export function formatUsd(v: number): string {
+  return `$${formatPrice(v)}`;
+}
+
+/** A large USD amount in compact form: "$1.17T", "$52.3B". */
+export function formatUsdCompact(v: number): string {
+  return `$${formatCompact(v)}`;
+}

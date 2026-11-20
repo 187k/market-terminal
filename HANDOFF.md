@@ -1,6 +1,6 @@
 # HANDOFF — current state of the project
 
-Snapshot date: **2026-11-20** (Stage 6 done on the development PC; the server soak is pending. Added after Stage 6: the view-only terminal and the home Proxmox deployment guide). This file describes where the project stands now. Permanent working rules are in [CLAUDE.md](CLAUDE.md). The full specification is [prompt.md](prompt.md). Design detail is in [README.md](README.md) and [docs/](docs/). Update this file when the state changes.
+Snapshot date: **2026-11-21** (Stage 6 done on the development PC; the server soak is pending. Added after Stage 6: the view-only terminal, the home Proxmox deployment guide, and the home page with a market overview). This file describes where the project stands now. Permanent working rules are in [CLAUDE.md](CLAUDE.md). The full specification is [prompt.md](prompt.md). Design detail is in [README.md](README.md) and [docs/](docs/). Update this file when the state changes.
 
 ## 1. Purpose
 
@@ -37,6 +37,7 @@ The project is the "Crypto Market Intelligence Platform" from `prompt.md`:
 | 5     | Full dashboard: WebSocket push, settings editor, filters, history, detail views                      | Done: [docs/stage-5-dashboard.md](docs/stage-5-dashboard.md)                                     |
 | 6     | Final testing: soak, load, Telegram live, production config                                          | Done on the dev PC: [docs/stage-6-testing.md](docs/stage-6-testing.md); 24 h server soak pending |
 | +     | View-only terminal (chart, order book, trades); home Proxmox deployment guide (user request, 2026-11-20) | Done: [docs/terminal.md](docs/terminal.md), [docs/deployment-proxmox.md](docs/deployment-proxmox.md) |
+| +     | Home page: market overview (user request, 2026-11-21; content chosen by the user) | Done: [docs/home.md](docs/home.md) |
 
 ## 3. Architecture (as built)
 
@@ -49,9 +50,9 @@ exchanges ──WS/REST──▶ collector ──▶ Redis ◀── engine (5 s
 
 | Process     | Main files                                                                                                                            | Does                                                                                                                                                                                                                                                                                                                   |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `collector` | `apps/collector/src/main.ts`, `market-state.ts`, `universe/`, `snapshots.ts`, `trades.ts`, `event-writer.ts`                          | Runs the connectors under a supervisor and builds the universe. Keeps every field's live value with freshness and validation. Every 1 s it publishes snapshots and health to Redis. Writes per-minute snapshots and connection events to Postgres. Forwards trades to a Redis Stream. Persists exchange bans in Redis. |
+| `collector` | `apps/collector/src/main.ts`, `market-state.ts`, `universe/`, `snapshots.ts`, `trades.ts`, `event-writer.ts`, `overview.ts`          | Runs the connectors under a supervisor and builds the universe. Keeps every field's live value with freshness and validation. Every 1 s it publishes snapshots and health to Redis. Writes per-minute snapshots and connection events to Postgres. Forwards trades to a Redis Stream. Persists exchange bans in Redis. Polls CoinGecko for the home page every 2 min (`mip:overview`). |
 | `engine`    | `apps/engine/src/main.ts`, `runner.ts`, `signals.ts`, `notifier.ts`, `scanners/*`, `history.ts`, `trades.ts`, `hl-twap.ts`, `view.ts` | Ticks every 1 s: reads the market view from Redis, runs each scanner on its own interval, and turns candidates into signals. Writes signals to Postgres and Redis and sends them to Telegram. Reloads settings when told to over pub/sub (60 s reload as fallback).                                                    |
-| `api`       | `apps/api/src/server.ts`, `auth.ts`, `sessions.ts`, `status.ts`, `markets.ts`, `scanners.ts`, `assets.ts`, `realtime.ts`, `terminal.ts` | REST API and the `/ws` realtime WebSocket for the dashboard, with a single-user login and sessions stored in Redis. The realtime hub reads each followed topic once per interval and pushes changes. For the terminal: candles and order books from the exchanges' public REST APIs while an instrument is open (shared limiters, bans shared via Redis), trades from the trade stream. |
+| `api`       | `apps/api/src/server.ts`, `auth.ts`, `sessions.ts`, `status.ts`, `markets.ts`, `scanners.ts`, `assets.ts`, `realtime.ts`, `terminal.ts`, `overview.ts` | REST API and the `/ws` realtime WebSocket for the dashboard, with a single-user login and sessions stored in Redis. The realtime hub reads each followed topic once per interval and pushes changes. For the terminal: candles and order books from the exchanges' public REST APIs while an instrument is open (shared limiters, bans shared via Redis), trades from the trade stream. For the home page: CoinGecko figures joined to the universe, and a per-coin perpetual summary from the live snapshots. |
 | `web`       | `apps/web/src/*`                                                                                                                      | React dashboard. One WebSocket per session (`realtime.ts`); while it is down every panel polls the matching REST route (2–5 s).                                                                                                                                                                                        |
 
 Shared packages (npm workspaces, in build order):
@@ -60,8 +61,8 @@ Shared packages (npm workspaces, in build order):
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `@mip/core`       | Shared types (`./types` is browser-safe), zod env schemas (`config.ts`), scanner settings schemas (`scanner-settings.ts`), pino logger with redaction, backoff, shutdown handling           |
 | `@mip/bus`        | Every Redis key and channel (`keys.ts`); read/write helpers for market snapshots, instruments, universe, bans, signals, scanner status, trade stream, heartbeats, health; `TradeBuffer` / `TradeFeed` (trade stream reader used by the engine and the API) |
-| `@mip/analytics`  | Pure math with no dependencies: `pctDiff`, `median`, `stdev`, `fairPriceMetrics`, `funding24h`, `bestFundingPair`, `sampleAt`, `oiChange`, `oiScenario`, `vwap`, `grossSpreadPct`, `profit`, `applyLastPrice`, `summarizeCandles`, `spreadPct` |
-| `@mip/connectors` | Base layer (rate limiter, REST client, managed WS, subscription sharding, base connector, supervisor), one folder per exchange, CoinGecko client, `DepthFetcher`, `KlineFetcher`, `PUBLIC_REST` |
+| `@mip/analytics`  | Pure math with no dependencies: `pctDiff`, `median`, `stdev`, `fairPriceMetrics`, `funding24h`, `bestFundingPair`, `sampleAt`, `oiChange`, `oiScenario`, `vwap`, `grossSpreadPct`, `profit`, `applyLastPrice`, `summarizeCandles`, `spreadPct`, `perpAggregate` |
+| `@mip/connectors` | Base layer (rate limiter, REST client, managed WS, subscription sharding, base connector, supervisor), one folder per exchange, CoinGecko client (universe ranking, home page coin figures and `/global`, `coingecko/parse.ts`), `DepthFetcher`, `KlineFetcher`, `PUBLIC_REST` |
 | `@mip/db`         | Prisma 7 schema, migrations, client factory (`pg` adapter), `signalRowToDto`                                                                                                                |
 
 ### Redis (no persistence; everything is rebuilt within seconds)
@@ -75,6 +76,7 @@ Shared packages (npm workspaces, in build order):
 | `mip:pause:<ex>`                        | collector and engine | until the ban ends                                     |
 | `mip:signals:<scanner>`, `mip:scanners` | engine               | scanner status 15 s                                    |
 | `mip:trades` (Stream)                   | collector            | MAXLEN ≈ 20,000 batches                                |
+| `mip:overview`                          | collector            | 6 h; rewritten every `OVERVIEW_REFRESH_SEC` (120 s); stale after 3 missed polls |
 | `mip:sess:<id>`                         | api                  | session TTL (default 168 h)                            |
 | channel `mip:events:settings`           | api                  | engine reloads settings                                |
 | channel `mip:events:connection`         | collector            | —                                                      |
@@ -146,12 +148,13 @@ Migrations: `init`, `universe_and_instruments`, `signals_and_settings`, `market_
 - `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`
 - `GET /api/system/status`, `GET /api/system/events?limit=`
 - `GET /api/markets/:exchange`, `GET /api/universe`
+- `GET /api/overview` (CoinGecko coin figures and global stats), `GET /api/overview/perps` (per-coin perpetual summary)
 - `GET /api/scanners`
 - `GET /api/signals?scanner=&status=active|resolved&asset=&exchange=&limit=&before=`, `GET /api/signals/live`
 - `GET /api/assets/:asset` (coin details)
 - `GET /api/scanners/:id/settings` (with defaults and JSON Schema), `PUT /api/scanners/:id/settings` (nested objects merged)
 - `GET /api/terminal/:exchange/:symbol?interval=`, `GET /api/terminal/:exchange/:symbol/candles?interval=&limit=&before=`
-- `GET /ws` (realtime topics: `status`, `scanners`, `signals`, `events`, `markets:<ex>`, `asset:<code>`, `terminal:<ex>:<symbol>:<interval>`)
+- `GET /ws` (realtime topics: `status`, `scanners`, `signals`, `events`, `markets:<ex>`, `asset:<code>`, `terminal:<ex>:<symbol>:<interval>`, `overview`, `perps`)
 
 **Dashboard (Stage 5).** Details in `docs/stage-5-dashboard.md`.
 
@@ -170,45 +173,53 @@ Migrations: `init`, `universe_and_instruments`, `signals_and_settings`, `market_
 - Header with live values and 24 h figures (last 24 hourly candles), exchange tabs with each exchange's last price, order book (12 levels, cumulative bars, spread), trades of at least `TRADES_MIN_NOTIONAL_USD` with Hyperliquid TWAP slices marked.
 - View only: no order entry; a disclaimer on the page.
 
+**Home page (2026-11-21).** Details in `docs/home.md`.
+
+- The dashboard opens on **Home** (`#/`); the scanner windows moved to `#/dashboard`. Top-bar tabs: Home / Dashboard / Terminal.
+- Market bar (total cap and 24 h change, volume, BTC / ETH dominance, CoinGecko Fear & Greed [O], perpetual OI, turnover and median funding); 20 coin cards in the style of the user's screenshot (price, 24 h and 7 d change, 7-day area chart, market cap, volume, median funding, OI and its 24 h change, freshness dot and age); top movers (1h / 24h / 7d); scanner states, latest signal updates and exchange states; market map (treemap by market cap, coloured by change); sortable table of all 100 coins with spot and perpetual columns.
+- Checked in the browser on 2026-11-21 (local dev API and web against the rebuilt Docker stack, throwaway test login): desktop 1440 px and phone 375 px (no horizontal scroll), WebSocket `live`, card click opens the coin view, `#/dashboard` unchanged, no console errors after login. Production images rebuilt; `/api/overview` and `/api/overview/perps` answer 401 without a session through nginx. **Not done:** logging in to `localhost:8080` itself (the real password was not used).
+
 ## 6. Project structure
 
 ```
 apps/
-  collector/src/   main.ts, market-state.ts, snapshots.ts, trades.ts, event-writer.ts, universe/{select,service}.ts
+  collector/src/   main.ts, market-state.ts, snapshots.ts, trades.ts, event-writer.ts, overview.ts, universe/{select,service}.ts
   engine/src/      main.ts, runner.ts, signals.ts, notifier.ts, format.ts, store.ts, settings.ts, view.ts,
                    history.ts, trades.ts, hl-twap.ts, scanners/{types,fair-price,open-interest,funding,spread,twap}.ts,
                    fixtures/market-view.json
-  api/src/         main.ts, server.ts, auth.ts, sessions.ts, status.ts, markets.ts, scanners.ts, assets.ts, realtime.ts, terminal.ts
-  web/src/         App.tsx, api.ts, hooks.ts, realtime.ts, route.ts, filters.ts, signalView.tsx, format.ts, styles.css,
-                   components/{DashboardPage,ScannerWindow,ScannerDrawer,SignalDetails,SettingsForm,FilterBar,
-                   AssetDrawer,Drawer,SortableTable,ExchangePanel,MarketPanel,EventsPanel,LoginPage,Badge,
-                   TerminalPage,CandleChart,OrderBook}.tsx
+  api/src/         main.ts, server.ts, auth.ts, sessions.ts, status.ts, markets.ts, scanners.ts, assets.ts, realtime.ts,
+                   terminal.ts, overview.ts
+  web/src/         App.tsx, api.ts, hooks.ts, realtime.ts, route.ts, filters.ts, signalView.tsx, format.ts, treemap.ts,
+                   styles.css, components/{DashboardPage,HomePage,CoinCard,Heatmap,ScannerWindow,ScannerDrawer,
+                   SignalDetails,SettingsForm,FilterBar,AssetDrawer,Drawer,SortableTable,ExchangePanel,MarketPanel,
+                   EventsPanel,LoginPage,Badge,TerminalPage,CandleChart,OrderBook}.tsx
 packages/
   core/src/        config.ts, scanner-settings.ts, logger.ts, backoff.ts, process.ts, time.ts,
                    types/* (signal-data.ts holds the scanner payloads stored in SignalDto.data)
-  bus/src/         keys.ts, redis.ts, heartbeat.ts, health.ts, market.ts, signals.ts, trades.ts, trade-feed.ts
-  analytics/src/   basic.ts, fair-price.ts, funding.ts, open-interest.ts, spread.ts, candles.ts
+  bus/src/         keys.ts, redis.ts, heartbeat.ts, health.ts, market.ts, signals.ts, trades.ts, trade-feed.ts, overview.ts
+  analytics/src/   basic.ts, fair-price.ts, funding.ts, open-interest.ts, spread.ts, candles.ts, perps.ts
   connectors/src/  base/*, supervisor.ts, registry.ts, public-rest.ts, coingecko/, depth/, klines/, test-support/,
                    {bybit,binance,mexc,hyperliquid,bitget,bingx,gate}/{parse.ts,index.ts,fixtures/,*.test.ts},
                    live.test.ts (opt-in), trades.test.ts
   db/              prisma/schema.prisma, prisma/migrations/, prisma.config.ts, src/{index,signals}.ts
-tools/             dev.mjs, record.mjs, record-klines.mjs, record-trades.mjs, record-view.mjs, test-live.mjs
+tools/             dev.mjs, record.mjs, record-klines.mjs, record-trades.mjs, record-view.mjs, record-coingecko.mjs,
+                   test-live.mjs
 docker/nginx.conf  serves the web build and proxies /api and /ws to the api service
 docs/              stage-1-analysis.md, stage-3-exchanges.md, stage-4-scanners.md, stage-5-dashboard.md,
-                   stage-6-testing.md, deployment.md, deployment-proxmox.md, terminal.md
+                   stage-6-testing.md, deployment.md, deployment-proxmox.md, terminal.md, home.md
 docker-compose.prod.yml, docker/Caddyfile, docker/backup.sh   production override (HTTPS, backups, log rotation)
 tools/verify-live.ts, tools/soak.ts   read-only live verification and soak monitor (npm run verify / soak)
 ```
 
-## 7. Current runtime state (checked 2026-11-18 about 05:55 local, UTC+7; Git, Docker and tests updated 2026-11-20 21:30)
+## 7. Current runtime state (checked 2026-11-18 about 05:55 local, UTC+7; Git, Docker and tests updated 2026-11-21 04:25)
 
-- **Git:** `main` has two commits by the user ("v1") and a GitHub remote `origin`. The terminal, the Proxmox guide and the earlier Stage 6 doc edits are **uncommitted** in the working tree. `.env` is gitignored. Claude has not committed anything.
-- **Docker stack** (`docker compose --profile app`, local, without the production override): api, engine and web rebuilt with the terminal on 2026-11-20 21:23; collector, postgres and redis unchanged. The dashboard is on `http://localhost:8080`. The engine restarted cleanly on the moved `TradeFeed` (251 signals restored, 333k trades replayed). API memory 89 MB.
+- **Git:** `main` has the user's commits ("v1", then two "terminal" commits that include the terminal and the Proxmox guide) and a GitHub remote `origin`. The home page is **uncommitted** in the working tree. `.env` is gitignored. Claude has not committed anything.
+- **Docker stack** (`docker compose --profile app`, local, without the production override): collector, api and web rebuilt with the home page on 2026-11-21 04:18 (the collector's first CoinGecko poll returned 100 coins and the global stats); engine rebuilt with the terminal on 2026-11-20 21:23; postgres and redis unchanged. The `market_snapshots` history starts at 2026-11-20 13:00 UTC, so the home page's OI 24 h change appears from about 13:00 UTC on 2026-11-21. The dashboard is on `http://localhost:8080`. The engine restarted cleanly on the moved `TradeFeed` (251 signals restored, 333k trades replayed). API memory 89 MB.
 - **Exchanges:** all seven `ok` and fully fresh, **including MEXC**: the user added WARP split-tunnel host exclusions for `contract.mexc.com` and `api.mexc.com`, and they apply to Docker Desktop containers (verified, 88/88).
   - Binance: the collector was restarted at 04:06 during a 418 ban on the shared WARP IP. It waited, sending nothing, until the ban ended at 05:45:49 and was `ok` again by 05:46:20 (87/87), by itself.
 - **Telegram works.** All five bots are administrators of the forum group "Infinitick". The user replaced the TWAP bot (the old one returned 502 for every call). From 03:56 to about 05:55: 39 messages sent, 0 failed (open interest 10, funding 4, spread 2, TWAP 23). That includes edits after significant changes and "resolved" edits. **Not yet seen:** a fair-price message (no fair-price signal since the fix), so that topic ID is unconfirmed.
 - **`.env`** (names only; values must never be printed): Telegram chat ID (corrected; the old value is kept as a comment), five tokens and five topic IDs. No exchange keys, no CoinGecko key, no MEXC overrides. `POSTGRES_PASSWORD` is the default `mip`, and `COOKIE_SECURE=false`; the API warns about both, which is fine locally.
-- **Tests:** 336 passed and 7 skipped (opt-in live tests), in 40 files. `npm run typecheck` and `prettier --check .` are clean.
+- **Tests:** 372 passed and 7 skipped (opt-in live tests), in 45 files. `npm run typecheck` and `prettier --check .` are clean.
 - **Soak on this PC** (04:09–05:54, `docs/stage-6-testing.md` §5): no sampling gaps; six exchanges `ok` in 210/210 samples; no process restart (except a deliberate API restart); no stalled scanner; `/api/health` p50 6 ms. **Collector memory rose 154 → 318 MB**, at a slowing rate (127 → 44 MB/h with constant instruments). Engine, API and PostgreSQL levelled off. Likely heap warm-up, but this must be confirmed on the 24 h server soak.
 - **Dev network:** Cloudflare WARP (consumer client 2026.7, mode `Warp`); split tunnel excludes the default private ranges plus the two MEXC hosts. The PC slept from 01:03 to 02:43 (100-minute gap in the snapshots). The quirks are listed in CLAUDE.md.
 
@@ -216,6 +227,15 @@ tools/verify-live.ts, tools/soak.ts   read-only live verification and soak monit
 
 | Decision                                                                                                                                             | Reason                                                                                                                                                        |
 | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Home page CoinGecko figures are polled by the **collector** (`MarketOverviewPoller`) through the existing CoinGecko client, low priority, no retries, every 120 s, and stored in `mip:overview` | One process and one rate limiter own the keyless CoinGecko budget (≈ 5 calls/min per IP), so the poll can never starve or 429 the universe build; a poll costs 2 calls. |
+| CoinGecko coins are matched to the universe by CoinGecko id; a volume-ranked universe gets no coin figures | Tickers are not unique (the universe already ties assets by id for the same reason). |
+| A failed CoinGecko poll keeps the last figures with their fetch time and records the error; the API marks them stale after 3 missed polls | Old figures shown as old beat a blank page; nothing is presented as current when it is not. |
+| Perpetual figures on the home page (premium, median funding, OI sum and 24 h change, turnover) are computed by the API from the live snapshots, math in `perpAggregate` (`@mip/analytics`) | Reuses the collector's freshness rules; stale exchanges drop out and are named. |
+| No perp-vs-CoinGecko "basis"; the premium uses each exchange's own index (Hyperliquid oracle) | CoinGecko's aggregate price is minutes old; comparing it with a live price would show a gap that is not there. |
+| The home page's two topics (`overview`, `perps`) are separate | The CoinGecko payload (100 coins with 168-point charts) changes once per poll and is pushed only then; the small perpetual payload changes every few seconds. |
+| CoinGecko's Fear & Greed reading is shown only when `/global` sends it, labelled undocumented [O] | Observed on 2026-11-21 but not in the documented schema. |
+| No coin logos on the home page | They would make every browser request images from CoinGecko's CDN. |
+| Home is the default page (`#/`); the scanner dashboard moved to `#/dashboard` | The user asked for a home page; old `#/` links now open it. |
 | Terminal candles and order books are requested by the **API** from the exchanges' public REST APIs, only while an instrument is open, throttled per instrument (book 2 s, newest candles 10 s and at candle close, 24 h figures 60 s) | A WebSocket kline and depth client for seven exchanges would be a large new subsystem; on-demand REST through the shared limiters costs a few requests per minute per open chart and honours bans (`mip:pause:<ex>`). |
 | The forming candle follows the live last price between syncs; it never opens a new candle by itself and keeps the exchange's volume | No invented OHLCV: the exchange's own candle replaces it at the next sync. |
 | The trade list shows the collector's trade stream (at least `TRADES_MIN_NOTIONAL_USD`), labelled as filtered, instead of polling recent-trade endpoints | WebSocket-sourced and already in Redis; seven more REST endpoints would be needed otherwise. |
@@ -259,8 +279,10 @@ tools/verify-live.ts, tools/soak.ts   read-only live verification and soak monit
 2. **A Telegram bot disabled by "chat not found" stays disabled until the engine restarts.** This is intended (no retry storm), but after fixing the chat the engine must be restarted.
 3. **A collector restarted during an exchange ban keeps that exchange offline until the ban ends**, because it needs REST to load the instrument list. Intended (requests during a ban extend it); documented in docs/deployment.md.
 4. **Stale wording in the docs:** `stage-3-exchanges.md` says trades are "not subscribed in Stage 3 (Stage 4.5)", but they are subscribed. Stage 1 proposes pnpm, raw-SQL bulk writes and daily partitions; none of these were adopted.
-5. **The web app has no automated tests.** It was checked by hand in the browser (Stage 5 list below, the polling fallback in Stage 6, and the terminal on 2026-11-20).
+5. **The web app has almost no automated tests** (only the market-map layout, `treemap.test.ts`). It was checked by hand in the browser (Stage 5 list below, the polling fallback in Stage 6, the terminal on 2026-11-20, the home page on 2026-11-21).
 6. **BingX candle volume unit is inferred** (base units; not documented). Shown as a note under the terminal chart.
+7. **Home page OI 24 h change needs 24 h of stored snapshots**; until then (and after the PC slept through t − 24 h) it shows a dash and a note. OI totals include Bitget and BingX, whose units are inferred.
+8. **On a phone the 20 coin cards make a long scroll** before the movers and the market map (one card per row at 375 px).
 
 ### Fixed in Stage 6
 
@@ -312,7 +334,7 @@ General dev-machine quirks (WARP, Binance 418, sleep, clock offset) are in CLAUD
 ## 10. Pending user actions and requests
 
 1. **Server:** the user's target is a home Proxmox server. Follow docs/deployment-proxmox.md (VM, Docker, git, `.env`, SSH tunnel / LAN / Tailscale / public HTTPS); stop the PC stack first so Telegram messages are not sent twice. Then run `npm run verify` and the 24 h soak there.
-2. **Commit:** never requested. If asked, create a feature branch first (`main` has no commits).
+2. **Commit:** the user committed the terminal themselves; the home page is uncommitted. If asked to commit, create a feature branch first (Claude works on a branch when on `main`).
 3. Optional: read-only exchange keys (Binance max leverage; account fee tiers would make spreads non-preliminary); a CoinGecko key (faster universe builds).
 4. Done in Stage 6: MEXC excluded from WARP by the user (verified); Telegram chat ID fixed and the TWAP bot replaced by the user. The user asked Claude to change the WARP setting; Claude does not change system network settings, so the user ran the `warp-cli` commands.
 
@@ -335,7 +357,7 @@ General dev-machine quirks (WARP, Binance 418, sleep, clock offset) are in CLAUD
 
 ## 12. Next steps (suggested order)
 
-1. Ask whether to commit the terminal and the Stage 6 doc edits (on a feature branch; `main` is the default branch).
+1. Ask whether to commit the home page (on a feature branch; `main` is the default branch). Check the home page's OI 24 h column once 24 h of snapshots exist.
 2. Deploy on the home Proxmox server (docs/deployment-proxmox.md), then `npm run verify` and a 24 h soak there; record the results in docs/stage-6-testing.md.
 3. Confirm the fair-price Telegram topic once that scanner opens a signal.
 

@@ -21,6 +21,8 @@ export const KEYS = {
   scannerStatus: `${PREFIX}:scanners`,
   /** Redis Stream of public trade batches (collector → engine). */
   trades: `${PREFIX}:trades`,
+  /** CoinGecko spot figures and global market stats for the home page (collector → api). */
+  marketOverview: `${PREFIX}:overview`,
 } as const;
 
 export const CHANNELS = {

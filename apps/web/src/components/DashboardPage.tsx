@@ -21,6 +21,7 @@ import { AssetDrawer } from './AssetDrawer';
 import { Badge } from './Badge';
 import { EventsPanel } from './EventsPanel';
 import { ExchangePanel } from './ExchangePanel';
+import { HomePage } from './HomePage';
 import { MarketPanel } from './MarketPanel';
 import { ScannerDrawer, type ScannerTab } from './ScannerDrawer';
 import { ScannerWindow } from './ScannerWindow';
@@ -32,6 +33,7 @@ const DEFAULT_FILTERS = Object.fromEntries(SCANNER_IDS.map((id) => [id, NO_FILTE
 >;
 
 const fetchEvents = () => api.events();
+const NO_SIGNALS: SignalDto[] = [];
 
 function ConnectionBadge() {
   const state = useConnectionState();
@@ -83,6 +85,7 @@ function Dashboard({ user, onLoggedOut }: { user: SessionUser; onLoggedOut: () =
   }, [signals.data]);
 
   const openAsset = useCallback((a: string) => setAsset(a), []);
+  const openScanner = useCallback((id: ScannerId) => setView({ id, tab: 'active' }), []);
   const setScannerFilters = (id: ScannerId) => (f: WindowFilters) => setFilters({ ...filters, [id]: f });
 
   const logout = async () => {
@@ -102,6 +105,13 @@ function Dashboard({ user, onLoggedOut }: { user: SessionUser; onLoggedOut: () =
           Market Intelligence
         </div>
         <nav className="tabs page-tabs" aria-label="Page">
+          <a
+            href={routeHash({ page: 'home' })}
+            className={`tab ${route.page === 'home' ? 'tab-active' : ''}`}
+            aria-current={route.page === 'home' ? 'page' : undefined}
+          >
+            Home
+          </a>
           <a
             href={routeHash({ page: 'dashboard' })}
             className={`tab ${route.page === 'dashboard' ? 'tab-active' : ''}`}
@@ -148,6 +158,17 @@ function Dashboard({ user, onLoggedOut }: { user: SessionUser; onLoggedOut: () =
 
       {route.page === 'terminal' ? (
         <TerminalPage route={route} onUnauthorized={onLoggedOut} onAsset={openAsset} />
+      ) : route.page === 'home' ? (
+        <HomePage
+          status={status.data}
+          scanners={scanners.data}
+          active={signals.data?.active ?? NO_SIGNALS}
+          recent={signals.data?.recent ?? NO_SIGNALS}
+          engineAlive={engineAlive}
+          onUnauthorized={onLoggedOut}
+          onAsset={openAsset}
+          onScanner={openScanner}
+        />
       ) : (
         <main className="layout">
           <div className="scanners">

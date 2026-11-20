@@ -5,3 +5,4 @@ export * from './funding.js';
 export * from './open-interest.js';
 export * from './spread.js';
 export * from './candles.js';
+export * from './perps.js';
